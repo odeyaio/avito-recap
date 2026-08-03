@@ -1,0 +1,19 @@
+{
+  "name": "avito-recap",
+  "private": true,
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "pnpm --filter @avito-recap/frontend build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "generate": "pnpm --filter @avito-recap/frontend generate",
+    "lint": "pnpm --filter @avito-recap/frontend lint",
+    "test": "pnpm --filter @avito-recap/frontend test"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6"
+  }
+}

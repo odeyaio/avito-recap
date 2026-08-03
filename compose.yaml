@@ -1,0 +1,61 @@
+name: avito-recap
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-avito-recap}
+      POSTGRES_USER: ${POSTGRES_USER:-avito-recap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-avito-recap}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    restart: unless-stopped
+
+  migrate:
+    image: migrate/migrate:v4.19.1
+    profiles: ["tools"]
+    volumes:
+      - ./apps/backend/database/migrations:/migrations:ro
+    entrypoint:
+      - migrate
+      - -path=/migrations
+      - -database=postgres://${POSTGRES_USER:-avito-recap}:${POSTGRES_PASSWORD:-avito-recap}@postgres:5432/${POSTGRES_DB:-avito-recap}?sslmode=disable
+    command:
+      - up
+    depends_on:
+      postgres:
+        condition: service_started
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    environment:
+      APP_ENV: production
+      HTTP_ADDRESS: :8080
+      HTTP_SHUTDOWN_TIMEOUT: 10s
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://${POSTGRES_USER:-avito-recap}:${POSTGRES_PASSWORD:-avito-recap}@postgres:5432/${POSTGRES_DB:-avito-recap}?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

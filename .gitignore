@@ -1,0 +1,9 @@
+.DS_Store
+.env
+.idea/
+.vscode/
+*.log
+coverage/
+dist/
+node_modules/
+apps/backend/avito-recap
