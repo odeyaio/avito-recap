@@ -11,6 +11,11 @@ services:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   migrate:
@@ -18,15 +23,11 @@ services:
     profiles: ["tools"]
     volumes:
       - ./apps/backend/database/migrations:/migrations:ro
-    entrypoint:
-      - migrate
-      - -path=/migrations
-      - -database=postgres://${POSTGRES_USER:-avito-recap}:${POSTGRES_PASSWORD:-avito-recap}@postgres:5432/${POSTGRES_DB:-avito-recap}?sslmode=disable
-    command:
-      - up
+      - ./apps/backend/scripts/run-migrations.sh:/run-migrations.sh:ro
+    entrypoint: ["/bin/sh", "/run-migrations.sh"]
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
     restart: "no"
 
   backend:
@@ -43,8 +44,19 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
+
+  generator:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile.generator
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-avito-recap}:${POSTGRES_PASSWORD:-avito-recap}@postgres:5432/${POSTGRES_DB:-avito-recap}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
 
   frontend:
     build:

@@ -1,4 +1,4 @@
-.PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down
+.PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down db-setup seed-data
 
 install:
 	pnpm install --frozen-lockfile
@@ -58,3 +58,10 @@ migrate-up:
 
 migrate-down:
 	docker compose run --rm migrate down 1
+
+seed-data:
+	docker compose up -d postgres
+	docker compose build generator
+	docker compose exec -T postgres psql -U avito-recap -d avito-recap -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || true
+	docker compose run --rm migrate
+	docker compose run --rm generator -dsn postgres://avito-recap:avito-recap@postgres:5432/avito-recap?sslmode=disable -users 100 -listings 1000

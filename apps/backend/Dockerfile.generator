@@ -1,0 +1,10 @@
+FROM golang:1.26.5-alpine
+
+WORKDIR /src
+
+COPY apps/backend/go.mod apps/backend/go.sum ./
+RUN go mod download
+
+COPY apps/backend/ ./
+
+ENTRYPOINT ["go", "run", "./tools/user_data_generator"]
