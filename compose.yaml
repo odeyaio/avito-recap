@@ -11,6 +11,11 @@ services:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
     restart: unless-stopped
 
   migrate:
@@ -26,7 +31,7 @@ services:
       - up
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
     restart: "no"
 
   backend:
@@ -43,7 +48,7 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
