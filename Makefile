@@ -1,4 +1,4 @@
-.PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down
+.PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down catalog-import
 
 install:
 	pnpm install --frozen-lockfile
@@ -58,3 +58,8 @@ migrate-up:
 
 migrate-down:
 	docker compose run --rm migrate down 1
+
+catalog-import:
+	go -C apps/backend run ./cmd/catalog-import \
+		-achievements-file ../../catalog/achievements.yaml \
+		-behaviors-file ../../catalog/behaviors.yaml

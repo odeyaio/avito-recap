@@ -1,0 +1,463 @@
+# yaml-language-server: $schema=./achievement-catalog.schema.json
+
+version: v1
+
+achievements:
+  - code: explorer_of_the_year
+    name: Исследователь года
+    ruleDescription: Вы посмотрели множество разных объявлений
+    iconKey: achievement-icons/explorer-of-the-year/v1.webp
+    shareableByDefault: true
+    sortOrder: 10
+    rule:
+      all:
+        - metric: activity.unique_listings_viewed
+          operator: gte
+          value: 100
+
+  - code: know_exactly_what_i_want
+    name: Точно знаю, чего хочу
+    ruleDescription: Вы проводили большую часть времени в одной категории
+    iconKey: achievement-icons/know-exactly-what-i-want/v1.webp
+    shareableByDefault: true
+    sortOrder: 20
+    rule:
+      all:
+        - metric: interests.top_category_share
+          operator: gte
+          value: 0.65
+        - metric: interests.top_category_actions
+          operator: gte
+          value: 20
+
+  - code: new_interest
+    name: Новый интерес
+    ruleDescription: Вы открыли для себя новую интересную категорию
+    iconKey: achievement-icons/new-interest/v1.webp
+    shareableByDefault: false
+    sortOrder: 30
+    rule:
+      all:
+        - metric: interests.new_significant_categories
+          operator: gte
+          value: 1
+
+  - code: successful_seller
+    name: Успешный продавец
+    ruleDescription: Вы успешно завершили несколько продаж
+    iconKey: achievement-icons/successful-seller/v1.webp
+    shareableByDefault: true
+    sortOrder: 40
+    rule:
+      all:
+        - metric: marketplace.sales
+          operator: gte
+          value: 3
+
+  - code: both_sides_of_deal
+    name: Две стороны сделки
+    ruleDescription: Вы побывали и покупателем, и продавцом
+    iconKey: achievement-icons/both-sides-of-deal/v1.webp
+    shareableByDefault: true
+    sortOrder: 50
+    rule:
+      all:
+        - metric: marketplace.purchases
+          operator: gte
+          value: 1
+        - metric: marketplace.sales
+          operator: gte
+          value: 1
+
+  - code: always_informed
+    name: Всегда в курсе
+    ruleDescription: Вы регулярно открывали объявления из уведомлений
+    iconKey: achievement-icons/always-informed/v1.webp
+    shareableByDefault: true
+    sortOrder: 60
+    rule:
+      all:
+        - metric: features.notification_opens
+          operator: gte
+          value: 10
+
+  - code: loyal_choice
+    name: Верный выбор
+    ruleDescription: Вы возвращались к любимой категории месяц за месяцем
+    iconKey: achievement-icons/loyal-choice/v1.webp
+    shareableByDefault: true
+    sortOrder: 70
+    rule:
+      all:
+        - metric: interests.most_consistent_category_months
+          operator: gte
+          value: 4
+
+  - code: filter_master
+    name: Мастер фильтров
+    ruleDescription: Вы часто уточняли поиск с помощью фильтров
+    iconKey: achievement-icons/filter-master/v1.webp
+    shareableByDefault: true
+    sortOrder: 80
+    rule:
+      all:
+        - metric: features.searches_with_filters
+          operator: gte
+          value: 15
+
+  - code: at_first_sight
+    name: С первого взгляда
+    ruleDescription: Вы быстро перешли от просмотра объявления к контакту
+    iconKey: achievement-icons/at-first-sight/v1.webp
+    shareableByDefault: false
+    sortOrder: 90
+    rule:
+      all:
+        - metric: intent.fast_view_to_contact_paths
+          operator: gte
+          value: 1
+
+  - code: careful_choice
+    name: Тщательный выбор
+    ruleDescription: Вы возвращались к одним и тем же объявлениям перед решением
+    iconKey: achievement-icons/careful-choice/v1.webp
+    shareableByDefault: false
+    sortOrder: 100
+    rule:
+      all:
+        - metric: intent.careful_contact_paths
+          operator: gte
+          value: 3
+
+  - code: collection_of_the_year
+    name: Коллекция года
+    ruleDescription: Вы собрали большую коллекцию объявлений в избранном
+    iconKey: achievement-icons/collection-of-the-year/v1.webp
+    shareableByDefault: true
+    sortOrder: 110
+    rule:
+      all:
+        - metric: intent.favorites_added
+          operator: gte
+          value: 30
+
+  - code: first_step
+    name: Первый шаг
+    ruleDescription: Вы совершили свою первую покупку или продажу
+    iconKey: achievement-icons/first-step/v1.webp
+    shareableByDefault: true
+    sortOrder: 120
+    rule:
+      all:
+        - metric: marketplace.first_completed_deal_in_period
+          operator: eq
+          value: true
+
+  - code: active_month
+    name: Активный месяц
+    ruleDescription: Вы установили личный рекорд активности за месяц
+    iconKey: achievement-icons/active-month/v1.webp
+    shareableByDefault: true
+    sortOrder: 130
+    rule:
+      all:
+        - metric: activity.most_active_month_actions
+          operator: gte
+          value: 50
+
+  - code: all_year_round
+    name: Круглый год
+    ruleDescription: Вы были с нами почти каждый месяц года
+    iconKey: achievement-icons/all-year-round/v1.webp
+    shareableByDefault: true
+    sortOrder: 140
+    rule:
+      all:
+        - metric: activity.active_months
+          operator: gte
+          value: 10
+
+  - code: marathon_runner
+    name: Марафонец
+    ruleDescription: Вы поддерживали длинную серию активных дней
+    iconKey: achievement-icons/marathon-runner/v1.webp
+    shareableByDefault: true
+    sortOrder: 150
+    rule:
+      all:
+        - metric: activity.longest_active_streak_days
+          operator: gte
+          value: 7
+
+  - code: early_bird
+    name: Ранняя пташка
+    ruleDescription: Вы часто замечали свежие объявления одними из первых
+    iconKey: achievement-icons/early-bird/v1.webp
+    shareableByDefault: true
+    sortOrder: 160
+    rule:
+      all:
+        - metric: activity.fresh_listing_view_share
+          operator: gte
+          value: 0.5
+        - metric: activity.views
+          operator: gte
+          value: 20
+
+  - code: rarity_hunter
+    name: Охотник за редкостями
+    ruleDescription: Вы находили интересное среди редких предложений
+    iconKey: achievement-icons/rarity-hunter/v1.webp
+    shareableByDefault: false
+    sortOrder: 170
+    rule:
+      all:
+        - metric: interests.low_supply_actions
+          operator: gte
+          value: 10
+
+  - code: broadening_horizons
+    name: Расширяя горизонты
+    ruleDescription: Вы исследовали множество разных категорий
+    iconKey: achievement-icons/broadening-horizons/v1.webp
+    shareableByDefault: true
+    sortOrder: 180
+    rule:
+      all:
+        - metric: interests.distinct_categories
+          operator: gte
+          value: 8
+
+  - code: favorite_direction
+    name: Любимое направление
+    ruleDescription: Вы снова и снова возвращались к любимой теме поиска
+    iconKey: achievement-icons/favorite-direction/v1.webp
+    shareableByDefault: false
+    sortOrder: 190
+    rule:
+      all:
+        - metric: interests.top_search_topic_share
+          operator: gte
+          value: 0.5
+        - metric: activity.searches
+          operator: gte
+          value: 10
+
+  - code: delivery_is_easier
+    name: С доставкой удобнее
+    ruleDescription: Вы выбирали доставку для значительной части сделок
+    iconKey: achievement-icons/delivery-is-easier/v1.webp
+    shareableByDefault: true
+    sortOrder: 200
+    rule:
+      all:
+        - metric: marketplace.delivery_share
+          operator: gte
+          value: 0.6
+        - metric: intent.completed_deals
+          operator: gte
+          value: 3
+
+  - code: across_the_country
+    name: По всей стране
+    ruleDescription: Вы пользовались доставкой в нескольких регионах страны
+    iconKey: achievement-icons/across-the-country/v1.webp
+    shareableByDefault: false
+    sortOrder: 210
+    rule:
+      all:
+        - metric: marketplace.delivery_regions
+          operator: gte
+          value: 3
+
+  - code: reliable_buyer
+    name: Надёжный покупатель
+    ruleDescription: Вы успешно завершили несколько покупок без отмен
+    iconKey: achievement-icons/reliable-buyer/v1.webp
+    shareableByDefault: false
+    sortOrder: 220
+    rule:
+      all:
+        - metric: marketplace.purchases
+          operator: gte
+          value: 3
+        - metric: marketplace.cancelled_purchases
+          operator: eq
+          value: 0
+
+  - code: reliable_seller
+    name: Надёжный продавец
+    ruleDescription: Вы успешно продавали и получали положительные оценки
+    iconKey: achievement-icons/reliable-seller/v1.webp
+    shareableByDefault: true
+    sortOrder: 230
+    rule:
+      all:
+        - metric: marketplace.sales
+          operator: gte
+          value: 3
+        - metric: community.average_rating
+          operator: gte
+          value: 4.5
+
+  - code: five_stars
+    name: Пять звёзд
+    ruleDescription: Вы получили несколько оценок в пять звёзд
+    iconKey: achievement-icons/five-stars/v1.webp
+    shareableByDefault: true
+    sortOrder: 240
+    rule:
+      all:
+        - metric: community.five_star_ratings
+          operator: gte
+          value: 3
+
+  - code: thanks_for_review
+    name: Спасибо за отзыв
+    ruleDescription: Вы регулярно делились отзывами после сделок
+    iconKey: achievement-icons/thanks-for-review/v1.webp
+    shareableByDefault: true
+    sortOrder: 250
+    rule:
+      all:
+        - metric: community.reviews_left
+          operator: gte
+          value: 3
+        - metric: community.review_after_deal_share
+          operator: gte
+          value: 0.6
+
+  - code: listing_of_the_year
+    name: Объявление года
+    ruleDescription: Вы опубликовали объявление, которое привлекло особенно много внимания
+    iconKey: achievement-icons/listing-of-the-year/v1.webp
+    shareableByDefault: true
+    sortOrder: 260
+    rule:
+      all:
+        - metric: marketplace.best_listing_engagement_percentile
+          operator: gte
+          value: 0.9
+
+  - code: fast_response
+    name: Быстрый отклик
+    ruleDescription: Вы получили первый контакт вскоре после публикации объявления
+    iconKey: achievement-icons/fast-response/v1.webp
+    shareableByDefault: false
+    sortOrder: 270
+    rule:
+      all:
+        - metric: marketplace.fast_listing_responses
+          operator: gte
+          value: 1
+
+  - code: listing_master
+    name: Мастер оформления
+    ruleDescription: Вы дополняли объявления фотографиями и подробным описанием
+    iconKey: achievement-icons/listing-master/v1.webp
+    shareableByDefault: true
+    sortOrder: 280
+    rule:
+      all:
+        - metric: marketplace.complete_listings
+          operator: gte
+          value: 3
+
+  - code: flexible_seller
+    name: Гибкий продавец
+    ruleDescription: Вы улучшали объявления, меняя цену или оформление
+    iconKey: achievement-icons/flexible-seller/v1.webp
+    shareableByDefault: false
+    sortOrder: 290
+    rule:
+      all:
+        - metric: marketplace.listing_edits
+          operator: gte
+          value: 3
+
+  - code: delivery_enabled
+    name: Доставка включена
+    ruleDescription: Вы подключили доставку к нескольким объявлениям
+    iconKey: achievement-icons/delivery-enabled/v1.webp
+    shareableByDefault: true
+    sortOrder: 300
+    rule:
+      all:
+        - metric: marketplace.delivery_enabled_listings
+          operator: gte
+          value: 3
+
+  - code: second_chance
+    name: Второй шанс
+    ruleDescription: Вы вернулись после долгого перерыва и снова начали действовать
+    iconKey: achievement-icons/second-chance/v1.webp
+    shareableByDefault: true
+    sortOrder: 310
+    rule:
+      all:
+        - metric: activity.returned_after_long_gap
+          operator: eq
+          value: true
+
+  - code: saved_for_later
+    name: Сохранено на будущее
+    ruleDescription: Вы сохранили несколько поисков на будущее
+    iconKey: achievement-icons/saved-for-later/v1.webp
+    shareableByDefault: true
+    sortOrder: 320
+    rule:
+      all:
+        - metric: features.saved_searches
+          operator: gte
+          value: 3
+
+  - code: found_among_hundreds
+    name: Нашёл среди сотен
+    ruleDescription: Вы выбрали, с кем связаться, изучив множество вариантов
+    iconKey: achievement-icons/found-among-hundreds/v1.webp
+    shareableByDefault: false
+    sortOrder: 330
+    rule:
+      all:
+        - metric: intent.max_views_before_contact
+          operator: gte
+          value: 50
+
+  - code: conscious_choice
+    name: Осознанный выбор
+    ruleDescription: Вы связались по многим объявлениям, добавленным в избранное
+    iconKey: achievement-icons/conscious-choice/v1.webp
+    shareableByDefault: false
+    sortOrder: 340
+    rule:
+      all:
+        - metric: intent.favorite_to_contact_conversion
+          operator: gte
+          value: 0.5
+        - metric: intent.favorites_added
+          operator: gte
+          value: 5
+
+  - code: everything_worked_out
+    name: Всё получилось
+    ruleDescription: Вы прошли весь путь от поиска до успешной сделки
+    iconKey: achievement-icons/everything-worked-out/v1.webp
+    shareableByDefault: false
+    sortOrder: 350
+    rule:
+      all:
+        - metric: intent.completed_search_to_deal_paths
+          operator: gte
+          value: 1
+
+  - code: in_touch
+    name: На связи
+    ruleDescription: Вы связались с продавцами или покупателями по множеству объявлений
+    iconKey: achievement-icons/in-touch/v1.webp
+    shareableByDefault: false
+    sortOrder: 360
+    rule:
+      all:
+        - metric: intent.contacted_unique_listings
+          operator: gte
+          value: 10

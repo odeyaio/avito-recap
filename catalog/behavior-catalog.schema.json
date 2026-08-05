@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://avito-recap.local/schemas/behavior-catalog.schema.json",
+  "title": "Behavior catalog",
+  "description": "Версионируемый каталог поведенческих типов, правил и базовых следующих действий.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "behaviors"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^v[1-9][0-9]*$",
+      "description": "Версия набора правил. Меняется при изменении порогов или семантики правил."
+    },
+    "behaviors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/behavior"
+      }
+    }
+  },
+  "$defs": {
+    "behavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "name",
+        "ruleDescription",
+        "sortOrder",
+        "rule",
+        "defaultAction"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Стабильный машинный код поведенческого типа."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ruleDescription": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Понятное человеку описание условия определения типа."
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "sortOrder": {
+          "type": "integer"
+        },
+        "rule": {
+          "$ref": "#/$defs/rule"
+        },
+        "defaultAction": {
+          "$ref": "#/$defs/defaultAction"
+        }
+      }
+    },
+    "defaultAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "title", "resolver"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Стабильный код намерения действия."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Безопасная формулировка по умолчанию и инструкция для ИИ."
+        },
+        "resolver": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Имя Go-стратегии, которая подбирает актуальную цель и строит href."
+        }
+      }
+    },
+    "rule": {
+      "description": "Листовое условие либо логическая группа all/any.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/condition"
+        },
+        {
+          "$ref": "#/$defs/allRule"
+        },
+        {
+          "$ref": "#/$defs/anyRule"
+        }
+      ]
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "operator", "value"],
+      "properties": {
+        "metric": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Ключ рассчитанной метрики, например activity.active_months."
+        },
+        "operator": {
+          "type": "string",
+          "enum": ["eq", "neq", "gt", "gte", "lt", "lte"],
+          "description": "eq = равно, neq = не равно, gt = больше, gte = больше или равно, lt = меньше, lte = меньше или равно."
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operator": {
+                "enum": ["gt", "gte", "lt", "lte"]
+              }
+            },
+            "required": ["operator"]
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "allRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["all"],
+      "properties": {
+        "all": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
+        }
+      }
+    },
+    "anyRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["any"],
+      "properties": {
+        "any": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule"
+          }
+        }
+      }
+    }
+  }
+}
