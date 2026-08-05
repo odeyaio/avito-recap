@@ -34,7 +34,7 @@ func TestRegisteredHandlers(t *testing.T) {
 		{
 			name:        "health",
 			method:      http.MethodGet,
-			target:      "/health",
+			target:      "/api/v1/health",
 			wantStatus:  http.StatusOK,
 			contentType: "application/json",
 		},
@@ -92,7 +92,7 @@ func TestCheckHealthDatabaseUnavailable(t *testing.T) {
 		return errors.New("database is down")
 	}))
 
-	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/health", nil)
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/health", nil)
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
 

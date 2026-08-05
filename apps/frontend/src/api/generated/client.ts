@@ -41,7 +41,7 @@ export type checkHealthResponse =
   checkHealthResponseSuccess | checkHealthResponseError;
 
 export const getCheckHealthUrl = () => {
-  return `/health`;
+  return `/api/v1/health`;
 };
 
 /**

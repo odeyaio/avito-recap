@@ -11,7 +11,7 @@ tags:
   - name: Recaps
 
 paths:
-  /health:
+  /api/v1/health:
     get:
       tags: [System]
       operationId: checkHealth
