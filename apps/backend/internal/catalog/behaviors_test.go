@@ -28,9 +28,9 @@ behaviors:
           operator: gte
           value: 10
     defaultAction:
-      code: save_search
-      title: Save search
-      resolver: frequent_search
+      code: open_feed
+      title: Open feed
+      resolver: personal_feed
 `,
 		},
 		{
@@ -48,8 +48,8 @@ behaviors:
           operator: gte
           value: 10
     defaultAction:
-      code: save_search
-      title: Save search
+      code: open_feed
+      title: Open feed
       resolver: Invalid Resolver
 `,
 			wantErr: true,
@@ -70,9 +70,9 @@ behaviors:
           operator: gte
           value: 10
     defaultAction:
-      code: save_search
-      title: Save search
-      resolver: frequent_search
+      code: open_feed
+      title: Open feed
+      resolver: personal_feed
   - <<: *behavior
     name: Second
     sortOrder: 20
@@ -94,9 +94,9 @@ behaviors:
           operator: contains
           value: 10
     defaultAction:
-      code: save_search
-      title: Save search
-      resolver: frequent_search
+      code: open_feed
+      title: Open feed
+      resolver: personal_feed
 `,
 			wantErr: true,
 		},

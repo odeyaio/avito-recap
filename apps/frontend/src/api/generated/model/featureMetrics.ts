@@ -8,7 +8,6 @@
  */
 
 export interface FeatureMetrics {
-  savedSearches: number;
   notificationOpens: number;
   promotionUses: number;
 }

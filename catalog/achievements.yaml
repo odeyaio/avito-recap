@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./achievement-catalog.schema.json
 
-version: v1
+version: v2
 
 achievements:
   - code: explorer_of_the_year
@@ -398,18 +398,6 @@ achievements:
         - metric: activity.returned_after_long_gap
           operator: eq
           value: true
-
-  - code: saved_for_later
-    name: Сохранено на будущее
-    ruleDescription: Вы сохранили несколько поисков на будущее
-    iconKey: achievement-icons/saved-for-later/v1.webp
-    shareableByDefault: true
-    sortOrder: 320
-    rule:
-      all:
-        - metric: features.saved_searches
-          operator: gte
-          value: 3
 
   - code: found_among_hundreds
     name: Нашёл среди сотен

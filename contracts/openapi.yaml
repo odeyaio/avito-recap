@@ -536,13 +536,9 @@ components:
       type: object
       additionalProperties: false
       required:
-        - savedSearches
         - notificationOpens
         - promotionUses
       properties:
-        savedSearches:
-          type: integer
-          format: int64
         notificationOpens:
           type: integer
           format: int64

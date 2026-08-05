@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./behavior-catalog.schema.json
 
-version: v1
+version: v2
 
 behaviors:
   - code: explorer
@@ -19,9 +19,9 @@ behaviors:
           operator: lte
           value: 3
     defaultAction:
-      code: save_frequent_search
-      title: Сохранить наиболее частый поиск
-      resolver: frequent_search_without_subscription
+      code: open_frequent_interest_feed
+      title: Посмотреть предложения по частым интересам
+      resolver: frequent_interest_feed
 
   - code: determined_buyer
     name: Целеустремлённый покупатель
@@ -291,13 +291,13 @@ behaviors:
           operator: lte
           value: 1
     defaultAction:
-      code: save_listing_or_search
-      title: Сохранить интересующее объявление или поиск
-      resolver: viewed_unsaved_listing_or_search
+      code: add_viewed_listing_to_favorites
+      title: Добавить интересующее объявление в избранное
+      resolver: viewed_unfavorited_listing
 
   - code: unfinished_intent
     name: Пользователь с незавершённым намерением
-    ruleDescription: Повторяет поиск или сохраняет объявления, но не связывается с продавцами
+    ruleDescription: Повторяет поисковые запросы или добавляет объявления в избранное, но не связывается с продавцами
     sortOrder: 180
     rule:
       all:
