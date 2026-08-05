@@ -11,7 +11,7 @@ import type { Evidence } from "./evidence";
 export interface BehaviorMatch {
   code: string;
   name: string;
-  ruleDescription: string;
+  description: string;
   /** Объяснение результата на фактах конкретного пользователя */
   explanation: string;
   /**

@@ -16,13 +16,13 @@ type BehaviorCatalog struct {
 }
 
 type BehaviorDefinition struct {
-	Code            string         `yaml:"code"`
-	Name            string         `yaml:"name"`
-	RuleDescription string         `yaml:"ruleDescription"`
-	Enabled         *bool          `yaml:"enabled,omitempty"`
-	SortOrder       int            `yaml:"sortOrder"`
-	Rule            map[string]any `yaml:"rule"`
-	DefaultAction   DefaultAction  `yaml:"defaultAction"`
+	Code          string         `yaml:"code"`
+	Name          string         `yaml:"name"`
+	Description   string         `yaml:"description"`
+	Enabled       *bool          `yaml:"enabled,omitempty"`
+	SortOrder     int            `yaml:"sortOrder"`
+	Rule          map[string]any `yaml:"rule"`
+	DefaultAction DefaultAction  `yaml:"defaultAction"`
 }
 
 type DefaultAction struct {
@@ -87,8 +87,8 @@ func (behaviorCatalog BehaviorCatalog) Validate() error {
 		if strings.TrimSpace(behavior.Name) == "" {
 			return fmt.Errorf("%s.name is required", path)
 		}
-		if strings.TrimSpace(behavior.RuleDescription) == "" {
-			return fmt.Errorf("%s.ruleDescription is required", path)
+		if strings.TrimSpace(behavior.Description) == "" {
+			return fmt.Errorf("%s.description is required", path)
 		}
 		if _, exists := orders[behavior.SortOrder]; exists {
 			return fmt.Errorf("duplicate behavior sortOrder %d", behavior.SortOrder)

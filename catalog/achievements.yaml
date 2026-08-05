@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=./achievement-catalog.schema.json
 
-version: v2
+version: v3
 
 achievements:
   - code: explorer_of_the_year
     name: Исследователь года
-    ruleDescription: Вы посмотрели множество разных объявлений
+    description: Вы посмотрели множество разных объявлений
     iconKey: achievement-icons/explorer-of-the-year/v1.webp
     shareableByDefault: true
     sortOrder: 10
@@ -17,7 +17,7 @@ achievements:
 
   - code: know_exactly_what_i_want
     name: Точно знаю, чего хочу
-    ruleDescription: Вы проводили большую часть времени в одной категории
+    description: Вы проводили большую часть времени в одной категории
     iconKey: achievement-icons/know-exactly-what-i-want/v1.webp
     shareableByDefault: true
     sortOrder: 20
@@ -32,7 +32,7 @@ achievements:
 
   - code: new_interest
     name: Новый интерес
-    ruleDescription: Вы открыли для себя новую интересную категорию
+    description: Вы открыли для себя новую интересную категорию
     iconKey: achievement-icons/new-interest/v1.webp
     shareableByDefault: false
     sortOrder: 30
@@ -44,7 +44,7 @@ achievements:
 
   - code: successful_seller
     name: Успешный продавец
-    ruleDescription: Вы успешно завершили несколько продаж
+    description: Вы успешно завершили несколько продаж
     iconKey: achievement-icons/successful-seller/v1.webp
     shareableByDefault: true
     sortOrder: 40
@@ -56,7 +56,7 @@ achievements:
 
   - code: both_sides_of_deal
     name: Две стороны сделки
-    ruleDescription: Вы побывали и покупателем, и продавцом
+    description: Вы побывали и покупателем, и продавцом
     iconKey: achievement-icons/both-sides-of-deal/v1.webp
     shareableByDefault: true
     sortOrder: 50
@@ -71,7 +71,7 @@ achievements:
 
   - code: always_informed
     name: Всегда в курсе
-    ruleDescription: Вы регулярно открывали объявления из уведомлений
+    description: Вы регулярно открывали объявления из уведомлений
     iconKey: achievement-icons/always-informed/v1.webp
     shareableByDefault: true
     sortOrder: 60
@@ -83,7 +83,7 @@ achievements:
 
   - code: loyal_choice
     name: Верный выбор
-    ruleDescription: Вы возвращались к любимой категории месяц за месяцем
+    description: Вы возвращались к любимой категории месяц за месяцем
     iconKey: achievement-icons/loyal-choice/v1.webp
     shareableByDefault: true
     sortOrder: 70
@@ -95,7 +95,7 @@ achievements:
 
   - code: filter_master
     name: Мастер фильтров
-    ruleDescription: Вы часто уточняли поиск с помощью фильтров
+    description: Вы часто уточняли поиск с помощью фильтров
     iconKey: achievement-icons/filter-master/v1.webp
     shareableByDefault: true
     sortOrder: 80
@@ -107,7 +107,7 @@ achievements:
 
   - code: at_first_sight
     name: С первого взгляда
-    ruleDescription: Вы быстро перешли от просмотра объявления к контакту
+    description: Вы быстро перешли от просмотра объявления к контакту
     iconKey: achievement-icons/at-first-sight/v1.webp
     shareableByDefault: false
     sortOrder: 90
@@ -119,7 +119,7 @@ achievements:
 
   - code: careful_choice
     name: Тщательный выбор
-    ruleDescription: Вы возвращались к одним и тем же объявлениям перед решением
+    description: Вы возвращались к одним и тем же объявлениям перед решением
     iconKey: achievement-icons/careful-choice/v1.webp
     shareableByDefault: false
     sortOrder: 100
@@ -131,7 +131,7 @@ achievements:
 
   - code: collection_of_the_year
     name: Коллекция года
-    ruleDescription: Вы собрали большую коллекцию объявлений в избранном
+    description: Вы собрали большую коллекцию объявлений в избранном
     iconKey: achievement-icons/collection-of-the-year/v1.webp
     shareableByDefault: true
     sortOrder: 110
@@ -143,7 +143,7 @@ achievements:
 
   - code: first_step
     name: Первый шаг
-    ruleDescription: Вы совершили свою первую покупку или продажу
+    description: Вы совершили свою первую покупку или продажу
     iconKey: achievement-icons/first-step/v1.webp
     shareableByDefault: true
     sortOrder: 120
@@ -155,7 +155,7 @@ achievements:
 
   - code: active_month
     name: Активный месяц
-    ruleDescription: Вы установили личный рекорд активности за месяц
+    description: Вы установили личный рекорд активности за месяц
     iconKey: achievement-icons/active-month/v1.webp
     shareableByDefault: true
     sortOrder: 130
@@ -167,7 +167,7 @@ achievements:
 
   - code: all_year_round
     name: Круглый год
-    ruleDescription: Вы были с нами почти каждый месяц года
+    description: Вы были с нами почти каждый месяц года
     iconKey: achievement-icons/all-year-round/v1.webp
     shareableByDefault: true
     sortOrder: 140
@@ -179,7 +179,7 @@ achievements:
 
   - code: marathon_runner
     name: Марафонец
-    ruleDescription: Вы поддерживали длинную серию активных дней
+    description: Вы поддерживали длинную серию активных дней
     iconKey: achievement-icons/marathon-runner/v1.webp
     shareableByDefault: true
     sortOrder: 150
@@ -191,7 +191,7 @@ achievements:
 
   - code: early_bird
     name: Ранняя пташка
-    ruleDescription: Вы часто замечали свежие объявления одними из первых
+    description: Вы часто замечали свежие объявления одними из первых
     iconKey: achievement-icons/early-bird/v1.webp
     shareableByDefault: true
     sortOrder: 160
@@ -206,7 +206,7 @@ achievements:
 
   - code: rarity_hunter
     name: Охотник за редкостями
-    ruleDescription: Вы находили интересное среди редких предложений
+    description: Вы находили интересное среди редких предложений
     iconKey: achievement-icons/rarity-hunter/v1.webp
     shareableByDefault: false
     sortOrder: 170
@@ -218,7 +218,7 @@ achievements:
 
   - code: broadening_horizons
     name: Расширяя горизонты
-    ruleDescription: Вы исследовали множество разных категорий
+    description: Вы исследовали множество разных категорий
     iconKey: achievement-icons/broadening-horizons/v1.webp
     shareableByDefault: true
     sortOrder: 180
@@ -230,7 +230,7 @@ achievements:
 
   - code: favorite_direction
     name: Любимое направление
-    ruleDescription: Вы снова и снова возвращались к любимой теме поиска
+    description: Вы снова и снова возвращались к любимой теме поиска
     iconKey: achievement-icons/favorite-direction/v1.webp
     shareableByDefault: false
     sortOrder: 190
@@ -245,7 +245,7 @@ achievements:
 
   - code: delivery_is_easier
     name: С доставкой удобнее
-    ruleDescription: Вы выбирали доставку для значительной части сделок
+    description: Вы выбирали доставку для значительной части сделок
     iconKey: achievement-icons/delivery-is-easier/v1.webp
     shareableByDefault: true
     sortOrder: 200
@@ -260,7 +260,7 @@ achievements:
 
   - code: across_the_country
     name: По всей стране
-    ruleDescription: Вы пользовались доставкой в нескольких регионах страны
+    description: Вы пользовались доставкой в нескольких регионах страны
     iconKey: achievement-icons/across-the-country/v1.webp
     shareableByDefault: false
     sortOrder: 210
@@ -272,7 +272,7 @@ achievements:
 
   - code: reliable_buyer
     name: Надёжный покупатель
-    ruleDescription: Вы успешно завершили несколько покупок без отмен
+    description: Вы успешно завершили несколько покупок без отмен
     iconKey: achievement-icons/reliable-buyer/v1.webp
     shareableByDefault: false
     sortOrder: 220
@@ -287,7 +287,7 @@ achievements:
 
   - code: reliable_seller
     name: Надёжный продавец
-    ruleDescription: Вы успешно продавали и получали положительные оценки
+    description: Вы успешно продавали и получали положительные оценки
     iconKey: achievement-icons/reliable-seller/v1.webp
     shareableByDefault: true
     sortOrder: 230
@@ -302,7 +302,7 @@ achievements:
 
   - code: five_stars
     name: Пять звёзд
-    ruleDescription: Вы получили несколько оценок в пять звёзд
+    description: Вы получили несколько оценок в пять звёзд
     iconKey: achievement-icons/five-stars/v1.webp
     shareableByDefault: true
     sortOrder: 240
@@ -314,7 +314,7 @@ achievements:
 
   - code: thanks_for_review
     name: Спасибо за отзыв
-    ruleDescription: Вы регулярно делились отзывами после сделок
+    description: Вы регулярно делились отзывами после сделок
     iconKey: achievement-icons/thanks-for-review/v1.webp
     shareableByDefault: true
     sortOrder: 250
@@ -329,7 +329,7 @@ achievements:
 
   - code: listing_of_the_year
     name: Объявление года
-    ruleDescription: Вы опубликовали объявление, которое привлекло особенно много внимания
+    description: Вы опубликовали объявление, которое привлекло особенно много внимания
     iconKey: achievement-icons/listing-of-the-year/v1.webp
     shareableByDefault: true
     sortOrder: 260
@@ -341,7 +341,7 @@ achievements:
 
   - code: fast_response
     name: Быстрый отклик
-    ruleDescription: Вы получили первый контакт вскоре после публикации объявления
+    description: Вы получили первый контакт вскоре после публикации объявления
     iconKey: achievement-icons/fast-response/v1.webp
     shareableByDefault: false
     sortOrder: 270
@@ -353,7 +353,7 @@ achievements:
 
   - code: listing_master
     name: Мастер оформления
-    ruleDescription: Вы дополняли объявления фотографиями и подробным описанием
+    description: Вы дополняли объявления фотографиями и подробным описанием
     iconKey: achievement-icons/listing-master/v1.webp
     shareableByDefault: true
     sortOrder: 280
@@ -365,7 +365,7 @@ achievements:
 
   - code: flexible_seller
     name: Гибкий продавец
-    ruleDescription: Вы улучшали объявления, меняя цену или оформление
+    description: Вы улучшали объявления, меняя цену или оформление
     iconKey: achievement-icons/flexible-seller/v1.webp
     shareableByDefault: false
     sortOrder: 290
@@ -377,7 +377,7 @@ achievements:
 
   - code: delivery_enabled
     name: Доставка включена
-    ruleDescription: Вы подключили доставку к нескольким объявлениям
+    description: Вы подключили доставку к нескольким объявлениям
     iconKey: achievement-icons/delivery-enabled/v1.webp
     shareableByDefault: true
     sortOrder: 300
@@ -389,7 +389,7 @@ achievements:
 
   - code: second_chance
     name: Второй шанс
-    ruleDescription: Вы вернулись после долгого перерыва и снова начали действовать
+    description: Вы вернулись после долгого перерыва и снова начали действовать
     iconKey: achievement-icons/second-chance/v1.webp
     shareableByDefault: true
     sortOrder: 310
@@ -401,7 +401,7 @@ achievements:
 
   - code: found_among_hundreds
     name: Нашёл среди сотен
-    ruleDescription: Вы выбрали, с кем связаться, изучив множество вариантов
+    description: Вы выбрали, с кем связаться, изучив множество вариантов
     iconKey: achievement-icons/found-among-hundreds/v1.webp
     shareableByDefault: false
     sortOrder: 330
@@ -413,7 +413,7 @@ achievements:
 
   - code: conscious_choice
     name: Осознанный выбор
-    ruleDescription: Вы связались по многим объявлениям, добавленным в избранное
+    description: Вы связались по многим объявлениям, добавленным в избранное
     iconKey: achievement-icons/conscious-choice/v1.webp
     shareableByDefault: false
     sortOrder: 340
@@ -428,7 +428,7 @@ achievements:
 
   - code: everything_worked_out
     name: Всё получилось
-    ruleDescription: Вы прошли весь путь от поиска до успешной сделки
+    description: Вы прошли весь путь от поиска до успешной сделки
     iconKey: achievement-icons/everything-worked-out/v1.webp
     shareableByDefault: false
     sortOrder: 350
@@ -440,7 +440,7 @@ achievements:
 
   - code: in_touch
     name: На связи
-    ruleDescription: Вы связались с продавцами или покупателями по множеству объявлений
+    description: Вы связались с продавцами или покупателями по множеству объявлений
     iconKey: achievement-icons/in-touch/v1.webp
     shareableByDefault: false
     sortOrder: 360

@@ -20,7 +20,7 @@ version: v1
 achievements:
   - code: explorer
     name: Explorer
-    ruleDescription: Many unique listing views
+    description: Many unique listing views
     iconKey: achievement-icons/explorer.webp
     shareableByDefault: true
     sortOrder: 10
@@ -48,7 +48,7 @@ achievements:
   - &achievement
     code: duplicate
     name: First
-    ruleDescription: First rule
+    description: First rule
     iconKey: achievement-icons/first.webp
     shareableByDefault: false
     sortOrder: 10
@@ -71,7 +71,7 @@ version: v1
 achievements:
   - code: invalid_operator
     name: Invalid operator
-    ruleDescription: Invalid rule
+    description: Invalid rule
     iconKey: achievement-icons/invalid.webp
     shareableByDefault: false
     sortOrder: 10
@@ -90,7 +90,7 @@ version: v1
 achievements:
   - code: invalid_value
     name: Invalid value
-    ruleDescription: Invalid rule value
+    description: Invalid rule value
     iconKey: achievement-icons/invalid.webp
     shareableByDefault: false
     sortOrder: 10

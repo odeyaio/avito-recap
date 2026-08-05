@@ -27,7 +27,7 @@
       "required": [
         "code",
         "name",
-        "ruleDescription",
+        "description",
         "sortOrder",
         "rule",
         "defaultAction"
@@ -42,7 +42,7 @@
           "type": "string",
           "minLength": 1
         },
-        "ruleDescription": {
+        "description": {
           "type": "string",
           "minLength": 1,
           "description": "Понятное человеку описание условия определения типа."

@@ -27,7 +27,7 @@
       "required": [
         "code",
         "name",
-        "ruleDescription",
+        "description",
         "iconKey",
         "shareableByDefault",
         "sortOrder",
@@ -43,7 +43,7 @@
           "type": "string",
           "minLength": 1
         },
-        "ruleDescription": {
+        "description": {
           "type": "string",
           "minLength": 1,
           "description": "Понятное человеку описание условия выдачи."

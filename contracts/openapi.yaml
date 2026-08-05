@@ -309,7 +309,7 @@ components:
     BehaviorMatch:
       type: object
       additionalProperties: false
-      required: [code, name, ruleDescription, explanation, evidence]
+      required: [code, name, description, explanation, evidence]
       properties:
         code:
           type: string
@@ -317,7 +317,7 @@ components:
         name:
           type: string
           example: Целеустремлённый покупатель
-        ruleDescription:
+        description:
           type: string
           example: Узкий интерес, повторные просмотры, избранное и контакты
         explanation:
@@ -549,7 +549,7 @@ components:
     Achievement:
       type: object
       additionalProperties: false
-      required: [code, name, ruleDescription, explanation, image, shareable]
+      required: [code, name, description, explanation, image, shareable]
       properties:
         code:
           type: string
@@ -557,7 +557,7 @@ components:
         name:
           type: string
           example: С доставкой удобнее
-        ruleDescription:
+        description:
           type: string
           example: Значительная часть сделок прошла с доставкой
         explanation:

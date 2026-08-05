@@ -34,7 +34,7 @@ type BehaviorTypeDefinition struct {
 	CatalogVersionID uuid.UUID
 	Code             string
 	Name             string
-	RuleDescription  string
+	Description      string
 	Rule             json.RawMessage
 	DefaultAction    json.RawMessage
 	Enabled          bool
@@ -47,7 +47,7 @@ type AchievementDefinition struct {
 	CatalogVersionID   uuid.UUID
 	Code               string
 	Name               string
-	RuleDescription    string
+	Description        string
 	Rule               json.RawMessage
 	IconKey            string
 	Enabled            bool

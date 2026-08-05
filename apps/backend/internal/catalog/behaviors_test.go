@@ -20,7 +20,7 @@ version: v1
 behaviors:
   - code: explorer
     name: Explorer
-    ruleDescription: Explores many listings
+    description: Explores many listings
     sortOrder: 10
     rule:
       all:
@@ -40,7 +40,7 @@ version: v1
 behaviors:
   - code: explorer
     name: Explorer
-    ruleDescription: Explores many listings
+    description: Explores many listings
     sortOrder: 10
     rule:
       all:
@@ -62,7 +62,7 @@ behaviors:
   - &behavior
     code: duplicate
     name: First
-    ruleDescription: First rule
+    description: First rule
     sortOrder: 10
     rule:
       all:
@@ -86,7 +86,7 @@ version: v1
 behaviors:
   - code: explorer
     name: Explorer
-    ruleDescription: Explores many listings
+    description: Explores many listings
     sortOrder: 10
     rule:
       all:

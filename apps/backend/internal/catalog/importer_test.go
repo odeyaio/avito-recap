@@ -9,11 +9,11 @@ func TestFingerprintCatalog(t *testing.T) {
 		Version: "v1",
 		Achievements: []AchievementDefinition{
 			{
-				Code:            "explorer",
-				Name:            "Explorer",
-				RuleDescription: "Views many listings",
-				IconKey:         "achievement-icons/explorer.webp",
-				SortOrder:       10,
+				Code:        "explorer",
+				Name:        "Explorer",
+				Description: "Views many listings",
+				IconKey:     "achievement-icons/explorer.webp",
+				SortOrder:   10,
 				Rule: map[string]any{
 					"operator": "gte",
 					"metric":   "activity.views",

@@ -11,7 +11,7 @@ import type { AchievementImage } from "./achievementImage";
 export interface Achievement {
   code: string;
   name: string;
-  ruleDescription: string;
+  description: string;
   /** Объяснение ачивки на фактах пользователя */
   explanation: string;
   image: AchievementImage;

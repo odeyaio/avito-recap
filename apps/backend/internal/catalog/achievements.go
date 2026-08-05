@@ -37,7 +37,7 @@ type AchievementCatalog struct {
 type AchievementDefinition struct {
 	Code               string         `yaml:"code"`
 	Name               string         `yaml:"name"`
-	RuleDescription    string         `yaml:"ruleDescription"`
+	Description        string         `yaml:"description"`
 	IconKey            string         `yaml:"iconKey"`
 	Enabled            *bool          `yaml:"enabled,omitempty"`
 	ShareableByDefault bool           `yaml:"shareableByDefault"`
@@ -101,8 +101,8 @@ func (catalog AchievementCatalog) Validate() error {
 		if strings.TrimSpace(achievement.Name) == "" {
 			return fmt.Errorf("%s.name is required", path)
 		}
-		if strings.TrimSpace(achievement.RuleDescription) == "" {
-			return fmt.Errorf("%s.ruleDescription is required", path)
+		if strings.TrimSpace(achievement.Description) == "" {
+			return fmt.Errorf("%s.description is required", path)
 		}
 		if strings.TrimSpace(achievement.IconKey) == "" || strings.HasPrefix(achievement.IconKey, "/") {
 			return fmt.Errorf("%s.iconKey must be a relative object key", path)

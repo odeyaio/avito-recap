@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=./behavior-catalog.schema.json
 
-version: v2
+version: v3
 
 behaviors:
   - code: explorer
     name: Исследователь
-    ruleDescription: Много уникальных просмотров и категорий, мало контактов
+    description: Много уникальных просмотров и категорий, мало контактов
     sortOrder: 10
     rule:
       all:
@@ -25,7 +25,7 @@ behaviors:
 
   - code: determined_buyer
     name: Целеустремлённый покупатель
-    ruleDescription: Узкий интерес, повторные просмотры, избранное и контакты
+    description: Узкий интерес, повторные просмотры, избранное и контакты
     sortOrder: 20
     rule:
       all:
@@ -48,7 +48,7 @@ behaviors:
 
   - code: favorite_collector
     name: Коллекционер избранного
-    ruleDescription: Много сохранений, но мало контактов
+    description: Много сохранений, но мало контактов
     sortOrder: 30
     rule:
       all:
@@ -65,7 +65,7 @@ behaviors:
 
   - code: active_buyer
     name: Активный покупатель
-    ruleDescription: Регулярные контакты и несколько завершённых покупок
+    description: Регулярные контакты и несколько завершённых покупок
     sortOrder: 40
     rule:
       all:
@@ -82,7 +82,7 @@ behaviors:
 
   - code: new_arrivals_hunter
     name: Охотник за новинками
-    ruleDescription: Часто открывает свежие объявления и переходит из уведомлений
+    description: Часто открывает свежие объявления и переходит из уведомлений
     sortOrder: 50
     rule:
       all:
@@ -99,7 +99,7 @@ behaviors:
 
   - code: careful_chooser
     name: Внимательный выбирающий
-    ruleDescription: Использует фильтры, сравнивает и возвращается к объявлениям
+    description: Использует фильтры, сравнивает и возвращается к объявлениям
     sortOrder: 60
     rule:
       all:
@@ -116,7 +116,7 @@ behaviors:
 
   - code: new_interests_lover
     name: Любитель новых интересов
-    ruleDescription: Проявил активность в нескольких новых категориях
+    description: Проявил активность в нескольких новых категориях
     sortOrder: 70
     rule:
       all:
@@ -130,7 +130,7 @@ behaviors:
 
   - code: regular_user
     name: Постоянный пользователь
-    ruleDescription: Активен в большинстве месяцев года
+    description: Активен в большинстве месяцев года
     sortOrder: 80
     rule:
       all:
@@ -144,7 +144,7 @@ behaviors:
 
   - code: seasonal_user
     name: Сезонный пользователь
-    ruleDescription: Основная активность приходится на определённый период
+    description: Основная активность приходится на определённый период
     sortOrder: 90
     rule:
       all:
@@ -161,7 +161,7 @@ behaviors:
 
   - code: returning_user
     name: Возвращающийся пользователь
-    ruleDescription: Возобновил активность после длительного перерыва
+    description: Возобновил активность после длительного перерыва
     sortOrder: 100
     rule:
       all:
@@ -175,7 +175,7 @@ behaviors:
 
   - code: novice_seller
     name: Начинающий продавец
-    ruleDescription: Создал первые объявления, но имеет мало завершённых продаж
+    description: Создал первые объявления, но имеет мало завершённых продаж
     sortOrder: 110
     rule:
       all:
@@ -192,7 +192,7 @@ behaviors:
 
   - code: active_seller
     name: Активный продавец
-    ruleDescription: Регулярно публикует объявления и получает контакты
+    description: Регулярно публикует объявления и получает контакты
     sortOrder: 120
     rule:
       all:
@@ -209,7 +209,7 @@ behaviors:
 
   - code: effective_seller
     name: Эффективный продавец
-    ruleDescription: Высокая доля объявлений завершается продажей
+    description: Высокая доля объявлений завершается продажей
     sortOrder: 130
     rule:
       all:
@@ -226,7 +226,7 @@ behaviors:
 
   - code: delivery_user
     name: Пользователь доставки
-    ruleDescription: Значительная часть сделок проходит с доставкой
+    description: Значительная часть сделок проходит с доставкой
     sortOrder: 140
     rule:
       all:
@@ -243,7 +243,7 @@ behaviors:
 
   - code: community_member
     name: Участник сообщества
-    ruleDescription: Регулярно оставляет отзывы и получает оценки
+    description: Регулярно оставляет отзывы и получает оценки
     sortOrder: 150
     rule:
       all:
@@ -260,7 +260,7 @@ behaviors:
 
   - code: universal_user
     name: Универсальный пользователь
-    ruleDescription: Активен и как покупатель, и как продавец
+    description: Активен и как покупатель, и как продавец
     sortOrder: 160
     rule:
       all:
@@ -277,7 +277,7 @@ behaviors:
 
   - code: observer
     name: Наблюдатель
-    ruleDescription: Много просмотров, почти нет избранного и контактов
+    description: Много просмотров, почти нет избранного и контактов
     sortOrder: 170
     rule:
       all:
@@ -297,7 +297,7 @@ behaviors:
 
   - code: unfinished_intent
     name: Пользователь с незавершённым намерением
-    ruleDescription: Повторяет поисковые запросы или добавляет объявления в избранное, но не связывается с продавцами
+    description: Повторяет поисковые запросы или добавляет объявления в избранное, но не связывается с продавцами
     sortOrder: 180
     rule:
       all:
@@ -318,7 +318,7 @@ behaviors:
 
   - code: rare_user
     name: Редкий пользователь
-    ruleDescription: Небольшое количество действий за год
+    description: Небольшое количество действий за год
     sortOrder: 190
     rule:
       all:
