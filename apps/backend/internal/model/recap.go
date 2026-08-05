@@ -7,6 +7,16 @@ import (
 	"github.com/google/uuid"
 )
 
+type CatalogKind string
+
+type CatalogVersion struct {
+	ID          uuid.UUID
+	Kind        CatalogKind
+	Version     string
+	ContentHash string
+	ImportedAt  time.Time
+}
+
 type RecapSnapshot struct {
 	ID             uuid.UUID
 	UserID         uuid.UUID
@@ -20,25 +30,25 @@ type RecapSnapshot struct {
 }
 
 type BehaviorTypeDefinition struct {
-	ID              uuid.UUID
-	Code            string
-	Name            string
-	RuleDescription string
-	Rule            json.RawMessage
-	RuleVersion     string
-	DefaultAction   json.RawMessage
-	Enabled         bool
-	SortOrder       int
-	UpdatedAt       time.Time
+	ID               uuid.UUID
+	CatalogVersionID uuid.UUID
+	Code             string
+	Name             string
+	RuleDescription  string
+	Rule             json.RawMessage
+	DefaultAction    json.RawMessage
+	Enabled          bool
+	SortOrder        int
+	UpdatedAt        time.Time
 }
 
 type AchievementDefinition struct {
 	ID                 uuid.UUID
+	CatalogVersionID   uuid.UUID
 	Code               string
 	Name               string
 	RuleDescription    string
 	Rule               json.RawMessage
-	RuleVersion        string
 	IconKey            string
 	Enabled            bool
 	ShareableByDefault bool

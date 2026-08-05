@@ -1,28 +1,44 @@
+CREATE TABLE catalog_versions (
+    id UUID PRIMARY KEY,
+    kind TEXT NOT NULL,
+    version TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    imported_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CHECK (kind IN ('achievement', 'behavior')),
+    CHECK (content_hash ~ '^[0-9a-f]{64}$'),
+    UNIQUE (kind, version)
+);
+
 CREATE TABLE behavior_type_definitions (
     id UUID PRIMARY KEY,
-    code TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL,
     name TEXT NOT NULL,
     rule_description TEXT NOT NULL,
     rule JSONB NOT NULL,
-    rule_version TEXT NOT NULL,
+    catalog_version_id UUID NOT NULL REFERENCES catalog_versions (id),
     default_action JSONB NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INTEGER NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE (catalog_version_id, code)
 );
 
 CREATE TABLE achievement_definitions (
     id UUID PRIMARY KEY,
-    code TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL,
     name TEXT NOT NULL,
     rule_description TEXT NOT NULL,
     rule JSONB NOT NULL,
-    rule_version TEXT NOT NULL,
+    catalog_version_id UUID NOT NULL REFERENCES catalog_versions (id),
     icon_key TEXT NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     shareable_by_default BOOLEAN NOT NULL DEFAULT FALSE,
     sort_order INTEGER NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE (catalog_version_id, code)
 );
 
 CREATE TABLE recap_behavior_types (
