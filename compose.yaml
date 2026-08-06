@@ -11,11 +11,15 @@ services:
       - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
     restart: unless-stopped
 
   migrate:
     image: migrate/migrate:v4.19.1
-    profiles: ["tools"]
     volumes:
       - ./apps/backend/database/migrations:/migrations:ro
     entrypoint:
@@ -26,7 +30,7 @@ services:
       - up
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
     restart: "no"
 
   backend:
@@ -42,8 +46,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
-        condition: service_started
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   frontend:

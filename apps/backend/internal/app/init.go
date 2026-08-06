@@ -1,6 +1,7 @@
 package app
 
 import (
+	httpadapter "avito-recap/internal/adapter/in/http"
 	"context"
 	"fmt"
 	"log/slog"
@@ -35,6 +36,7 @@ func New(ctx context.Context, config Config, logger *slog.Logger) (*App, error) 
 	router := echo.New()
 	router.Logger = logger
 	router.Use(middleware.RequestID(), middleware.RequestLogger(), middleware.Recover())
+	httpadapter.RegisterHandlers(router, pool)
 
 	server := echo.StartConfig{
 		Address:         config.HTTP.Address,

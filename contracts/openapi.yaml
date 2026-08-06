@@ -1,5 +1,701 @@
-openapi: 3.2.0
+openapi: 3.0.3
 info:
   title: Avito Recap API
-  version: 0.0.0
-paths: {}
+  version: 0.1.0
+  description: |
+    API MVP «Итоги года».
+
+tags:
+  - name: System
+  - name: Profiles
+  - name: Recaps
+
+paths:
+  /api/v1/health:
+    get:
+      tags: [System]
+      operationId: checkHealth
+      summary: Проверить состояние API
+      responses:
+        "200":
+          description: API и база данных доступны
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/profiles:
+    get:
+      tags: [Profiles]
+      operationId: listProfiles
+      summary: Получить тестовые профили
+      description: Возвращает профили, доступные для выбора на стартовом экране MVP.
+      responses:
+        "200":
+          description: Список тестовых профилей
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileListResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/profiles/{profileId}/recaps:
+    post:
+      tags: [Recaps]
+      operationId: generateRecap
+      summary: Сгенерировать итоги года
+      description: |
+        Синхронно рассчитывает метрики и правила, формирует AI-представление
+        и возвращает готовый recap. Если для того же профиля, периода,
+        набора данных и версии правил уже существует результат, сервис может
+        вернуть сохранённую версию.
+      parameters:
+        - $ref: "#/components/parameters/ProfileId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRecapRequest"
+      responses:
+        "200":
+          description: Готовый recap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recap"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/ProfileNotFound"
+        "422":
+          $ref: "#/components/responses/InsufficientActivity"
+        "503":
+          $ref: "#/components/responses/GenerationUnavailable"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/recaps/{recapId}:
+    get:
+      tags: [Recaps]
+      operationId: getRecap
+      summary: Получить ранее созданный recap
+      parameters:
+        - $ref: "#/components/parameters/RecapId"
+      responses:
+        "200":
+          description: Готовый recap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recap"
+        "404":
+          $ref: "#/components/responses/RecapNotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  parameters:
+    ProfileId:
+      name: profileId
+      in: path
+      required: true
+      description: UUID тестового профиля
+      schema:
+        type: string
+        format: uuid
+        example: 7a9e06c2-42a2-4cb9-ae7d-3f187a51735c
+    RecapId:
+      name: recapId
+      in: path
+      required: true
+      description: UUID recap
+      schema:
+        type: string
+        format: uuid
+        example: 410942ba-9544-49db-99fb-a02cc19e5b84
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ProfileNotFound:
+      description: Профиль не найден
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    RecapNotFound:
+      description: Recap не найден
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InsufficientActivity:
+      description: Для содержательного recap недостаточно активности
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    GenerationUnavailable:
+      description: Не удалось сформировать пользовательское представление recap
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ServiceUnavailable:
+      description: Сервис временно недоступен
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: Внутренняя ошибка сервиса
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    ProfileListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileSummary"
+
+    ProfileSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - displayName
+        - region
+        - registeredAt
+        - availableYears
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID профиля
+          example: 7a9e06c2-42a2-4cb9-ae7d-3f187a51735c
+        displayName:
+          type: string
+          example: Алексей
+        region:
+          type: string
+          example: Омск
+        registeredAt:
+          type: string
+          format: date-time
+        availableYears:
+          type: array
+          items:
+            type: integer
+            format: int32
+          example: [2025]
+        avatarUrl:
+          type: string
+          format: uri
+        teaser:
+          type: string
+          description: Короткая нейтральная подсказка для выбора тестового профиля
+        latestRecapId:
+          type: string
+          format: uuid
+
+    GenerateRecapRequest:
+      type: object
+      additionalProperties: false
+      required: [year]
+      properties:
+        year:
+          type: integer
+          format: int32
+          minimum: 2020
+          maximum: 2100
+          example: 2025
+        locale:
+          type: string
+          default: ru-RU
+          example: ru-RU
+
+    Recap:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - profile
+        - period
+        - behavior
+        - metrics
+        - achievements
+        - story
+        - nextAction
+        - generatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        profile:
+          $ref: "#/components/schemas/ProfileSummary"
+        period:
+          $ref: "#/components/schemas/RecapPeriod"
+        behavior:
+          $ref: "#/components/schemas/BehaviorProfile"
+        metrics:
+          $ref: "#/components/schemas/RecapMetrics"
+        achievements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Achievement"
+        story:
+          $ref: "#/components/schemas/RecapStory"
+        nextAction:
+          $ref: "#/components/schemas/NextAction"
+        shareCard:
+          $ref: "#/components/schemas/ShareCard"
+        generatedAt:
+          type: string
+          format: date-time
+
+    RecapPeriod:
+      type: object
+      additionalProperties: false
+      required: [year, startsAt, endsAt]
+      properties:
+        year:
+          type: integer
+          format: int32
+        startsAt:
+          type: string
+          format: date
+        endsAt:
+          type: string
+          format: date
+          description: Исключительная верхняя граница периода
+
+    BehaviorProfile:
+      type: object
+      additionalProperties: false
+      required: [primary, traits]
+      properties:
+        primary:
+          $ref: "#/components/schemas/BehaviorMatch"
+        traits:
+          type: array
+          description: Дополнительные поведенческие признаки по убыванию значимости
+          items:
+            $ref: "#/components/schemas/BehaviorMatch"
+
+    BehaviorMatch:
+      type: object
+      additionalProperties: false
+      required: [code, name, description, explanation, evidence]
+      properties:
+        code:
+          type: string
+          example: determined_buyer
+        name:
+          type: string
+          example: Целеустремлённый покупатель
+        description:
+          type: string
+          example: Узкий интерес, повторные просмотры, избранное и контакты
+        explanation:
+          type: string
+          description: Объяснение результата на фактах конкретного пользователя
+        score:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/Evidence"
+
+    Evidence:
+      type: object
+      additionalProperties: false
+      required: [metricCode, description]
+      properties:
+        metricCode:
+          type: string
+          example: repeat_views
+        description:
+          type: string
+          example: Вы вернулись к 12 объявлениям несколько раз
+
+    RecapMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - activity
+        - interests
+        - intent
+        - marketplace
+        - community
+        - features
+      properties:
+        activity:
+          $ref: "#/components/schemas/ActivityMetrics"
+        interests:
+          $ref: "#/components/schemas/InterestMetrics"
+        intent:
+          $ref: "#/components/schemas/IntentMetrics"
+        marketplace:
+          $ref: "#/components/schemas/MarketplaceMetrics"
+        community:
+          $ref: "#/components/schemas/CommunityMetrics"
+        features:
+          $ref: "#/components/schemas/FeatureMetrics"
+
+    ActivityMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - views
+        - uniqueListingsViewed
+        - searches
+        - activeDays
+        - activeMonths
+        - longestActiveStreakDays
+      properties:
+        views:
+          type: integer
+          format: int64
+        uniqueListingsViewed:
+          type: integer
+          format: int64
+        searches:
+          type: integer
+          format: int64
+        activeDays:
+          type: integer
+          format: int32
+        activeMonths:
+          type: integer
+          format: int32
+        longestActiveStreakDays:
+          type: integer
+          format: int32
+        mostActiveMonth:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          example: 2025-09
+        favoriteHour:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 23
+
+    InterestMetrics:
+      type: object
+      additionalProperties: false
+      required: [topCategories, newCategories]
+      properties:
+        topCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryMetric"
+        newCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryMetric"
+        mostConsistentCategory:
+          $ref: "#/components/schemas/CategoryMetric"
+
+    CategoryMetric:
+      type: object
+      additionalProperties: false
+      required: [code, name, actions, activeMonths]
+      properties:
+        code:
+          type: string
+          example: electronics
+        name:
+          type: string
+          example: Электроника
+        actions:
+          type: integer
+          format: int64
+        activeMonths:
+          type: integer
+          format: int32
+        share:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+    IntentMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - repeatViews
+        - favoritesAdded
+        - activeFavorites
+        - contacts
+        - completedDeals
+      properties:
+        repeatViews:
+          type: integer
+          format: int64
+        favoritesAdded:
+          type: integer
+          format: int64
+        activeFavorites:
+          type: integer
+          format: int64
+        contacts:
+          type: integer
+          format: int64
+        completedDeals:
+          type: integer
+          format: int64
+        contactToDealConversion:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+    MarketplaceMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - purchases
+        - sales
+        - deliveryDeals
+        - publishedListings
+        - closedListings
+        - listingViews
+        - listingContacts
+      properties:
+        purchases:
+          type: integer
+          format: int64
+        sales:
+          type: integer
+          format: int64
+        deliveryDeals:
+          type: integer
+          format: int64
+        publishedListings:
+          type: integer
+          format: int64
+        closedListings:
+          type: integer
+          format: int64
+        listingViews:
+          type: integer
+          format: int64
+        listingContacts:
+          type: integer
+          format: int64
+
+    CommunityMetrics:
+      type: object
+      additionalProperties: false
+      required: [reviewsLeft, reviewsReceived, fiveStarRatings]
+      properties:
+        reviewsLeft:
+          type: integer
+          format: int64
+        reviewsReceived:
+          type: integer
+          format: int64
+        fiveStarRatings:
+          type: integer
+          format: int64
+        averageRating:
+          type: number
+          format: double
+          minimum: 1
+          maximum: 5
+
+    FeatureMetrics:
+      type: object
+      additionalProperties: false
+      required:
+        - notificationOpens
+        - promotionUses
+      properties:
+        notificationOpens:
+          type: integer
+          format: int64
+        promotionUses:
+          type: integer
+          format: int64
+
+    Achievement:
+      type: object
+      additionalProperties: false
+      required: [code, name, description, explanation, image, shareable]
+      properties:
+        code:
+          type: string
+          example: delivery_is_easier
+        name:
+          type: string
+          example: С доставкой удобнее
+        description:
+          type: string
+          example: Значительная часть сделок прошла с доставкой
+        explanation:
+          type: string
+          description: Объяснение ачивки на фактах пользователя
+        image:
+          $ref: "#/components/schemas/AchievementImage"
+        achievedAt:
+          type: string
+          format: date-time
+        shareable:
+          type: boolean
+
+    AchievementImage:
+      type: object
+      additionalProperties: false
+      required: [url, alt]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Постоянный URL изображения через CDN
+        alt:
+          type: string
+          description: Альтернативный текст для изображения ачивки
+
+    RecapStory:
+      type: object
+      additionalProperties: false
+      required: [headline, summary, cards]
+      properties:
+        headline:
+          type: string
+          example: Ваш тип года — «Целеустремлённый покупатель»
+        summary:
+          type: string
+          example: Вы возвращались к избранным объявлениям и активно использовали доставку.
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoryCard"
+
+    StoryCard:
+      type: object
+      additionalProperties: false
+      required: [id, kind, title, text, shareable]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          description: Стабильный тип карточки для выбора UI-компонента
+          example: top_category
+        title:
+          type: string
+        text:
+          type: string
+        metricCodes:
+          type: array
+          items:
+            type: string
+        mediaUrl:
+          type: string
+          format: uri
+        shareable:
+          type: boolean
+
+    NextAction:
+      type: object
+      additionalProperties: false
+      required: [code, title, text, href, target]
+      properties:
+        code:
+          type: string
+          example: return_to_current_options
+        title:
+          type: string
+          example: Вернуться к актуальным вариантам
+        text:
+          type: string
+          description: Персональная формулировка, созданная ИИ для готового действия
+        href:
+          type: string
+          description: Внутренняя ссылка или deep link, сформированный сервисом
+          example: /search?category=electronics&delivery=true
+        target:
+          $ref: "#/components/schemas/ActionTarget"
+
+    ActionTarget:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          type: string
+          example: search
+        id:
+          type: string
+          description: Идентификатор объявления, поиска или подборки
+        categoryCode:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+
+    ShareCard:
+      type: object
+      additionalProperties: false
+      required: [title, subtitle]
+      properties:
+        title:
+          type: string
+        subtitle:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+          example: https://avito-recap.example/problems/profile-not-found
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        code:
+          type: string
+          example: profile_not_found
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
