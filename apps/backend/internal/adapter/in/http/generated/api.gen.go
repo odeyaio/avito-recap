@@ -6,23 +6,404 @@ package generated
 import (
 	"bytes"
 	"compress/flate"
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v5"
+	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Achievement defines model for Achievement.
+type Achievement struct {
+	AchievedAt *time.Time `json:"achievedAt,omitempty"`
+
+	// Code Example: delivery_is_easier
+	Code string `json:"code"`
+
+	// Description Example: Значительная часть сделок прошла с доставкой
+	Description string `json:"description"`
+
+	// Explanation Объяснение ачивки на фактах пользователя
+	Explanation string           `json:"explanation"`
+	Image       AchievementImage `json:"image"`
+
+	// Name Example: С доставкой удобнее
+	Name      string `json:"name"`
+	Shareable bool   `json:"shareable"`
+}
+
+// AchievementImage defines model for AchievementImage.
+type AchievementImage struct {
+	// Alt Альтернативный текст для изображения ачивки
+	Alt string `json:"alt"`
+
+	// URL Постоянный URL изображения через CDN
+	URL string `json:"url"`
+}
+
+// ActionTarget defines model for ActionTarget.
+type ActionTarget struct {
+	CategoryCode *string `json:"categoryCode,omitempty"`
+
+	// ID Идентификатор объявления, поиска или подборки
+	ID         *string                `json:"id,omitempty"`
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
+
+	// Type Example: search
+	Type string `json:"type"`
+}
+
+// ActivityMetrics defines model for ActivityMetrics.
+type ActivityMetrics struct {
+	ActiveDays              int32  `json:"activeDays"`
+	ActiveMonths            int32  `json:"activeMonths"`
+	FavoriteHour            *int32 `json:"favoriteHour,omitempty"`
+	LongestActiveStreakDays int32  `json:"longestActiveStreakDays"`
+
+	// MostActiveMonth Example: 2025-09
+	MostActiveMonth      *string `json:"mostActiveMonth,omitempty"`
+	Searches             int64   `json:"searches"`
+	UniqueListingsViewed int64   `json:"uniqueListingsViewed"`
+	Views                int64   `json:"views"`
+}
+
+// BehaviorMatch defines model for BehaviorMatch.
+type BehaviorMatch struct {
+	// Code Example: determined_buyer
+	Code string `json:"code"`
+
+	// Description Example: Узкий интерес, повторные просмотры, избранное и контакты
+	Description string     `json:"description"`
+	Evidence    []Evidence `json:"evidence"`
+
+	// Explanation Объяснение результата на фактах конкретного пользователя
+	Explanation string `json:"explanation"`
+
+	// Name Example: Целеустремлённый покупатель
+	Name  string   `json:"name"`
+	Score *float64 `json:"score,omitempty"`
+}
+
+// BehaviorProfile defines model for BehaviorProfile.
+type BehaviorProfile struct {
+	Primary BehaviorMatch `json:"primary"`
+
+	// Traits Дополнительные поведенческие признаки по убыванию значимости
+	Traits []BehaviorMatch `json:"traits"`
+}
+
+// CategoryMetric defines model for CategoryMetric.
+type CategoryMetric struct {
+	Actions      int64 `json:"actions"`
+	ActiveMonths int32 `json:"activeMonths"`
+
+	// Code Example: electronics
+	Code string `json:"code"`
+
+	// Name Example: Электроника
+	Name  string   `json:"name"`
+	Share *float64 `json:"share,omitempty"`
+}
+
+// CommunityMetrics defines model for CommunityMetrics.
+type CommunityMetrics struct {
+	AverageRating   *float64 `json:"averageRating,omitempty"`
+	FiveStarRatings int64    `json:"fiveStarRatings"`
+	ReviewsLeft     int64    `json:"reviewsLeft"`
+	ReviewsReceived int64    `json:"reviewsReceived"`
+}
+
+// Evidence defines model for Evidence.
+type Evidence struct {
+	// Description Example: Вы вернулись к 12 объявлениям несколько раз
+	Description string `json:"description"`
+
+	// MetricCode Example: repeat_views
+	MetricCode string `json:"metricCode"`
+}
+
+// FeatureMetrics defines model for FeatureMetrics.
+type FeatureMetrics struct {
+	NotificationOpens int64 `json:"notificationOpens"`
+	PromotionUses     int64 `json:"promotionUses"`
+}
+
+// GenerateRecapRequest defines model for GenerateRecapRequest.
+type GenerateRecapRequest struct {
+	// Locale Example: ru-RU
+	Locale *string `json:"locale,omitempty"`
+
+	// Year Example: 2025
+	Year int32 `json:"year"`
+}
+
+// HealthResponse defines model for HealthResponse.
+type HealthResponse struct {
+	// Status Example: ok
+	Status string `json:"status"`
+}
+
+// IntentMetrics defines model for IntentMetrics.
+type IntentMetrics struct {
+	ActiveFavorites         int64    `json:"activeFavorites"`
+	CompletedDeals          int64    `json:"completedDeals"`
+	ContactToDealConversion *float64 `json:"contactToDealConversion,omitempty"`
+	Contacts                int64    `json:"contacts"`
+	FavoritesAdded          int64    `json:"favoritesAdded"`
+	RepeatViews             int64    `json:"repeatViews"`
+}
+
+// InterestMetrics defines model for InterestMetrics.
+type InterestMetrics struct {
+	MostConsistentCategory *CategoryMetric  `json:"mostConsistentCategory,omitempty"`
+	NewCategories          []CategoryMetric `json:"newCategories"`
+	TopCategories          []CategoryMetric `json:"topCategories"`
+}
+
+// MarketplaceMetrics defines model for MarketplaceMetrics.
+type MarketplaceMetrics struct {
+	ClosedListings    int64 `json:"closedListings"`
+	DeliveryDeals     int64 `json:"deliveryDeals"`
+	ListingContacts   int64 `json:"listingContacts"`
+	ListingViews      int64 `json:"listingViews"`
+	PublishedListings int64 `json:"publishedListings"`
+	Purchases         int64 `json:"purchases"`
+	Sales             int64 `json:"sales"`
+}
+
+// NextAction defines model for NextAction.
+type NextAction struct {
+	// Code Example: return_to_current_options
+	Code string `json:"code"`
+
+	// Href Внутренняя ссылка или deep link, сформированный сервисом
+	//
+	// Example: /search?category=electronics&delivery=true
+	Href   string       `json:"href"`
+	Target ActionTarget `json:"target"`
+
+	// Text Персональная формулировка, созданная ИИ для готового действия
+	Text string `json:"text"`
+
+	// Title Example: Вернуться к актуальным вариантам
+	Title string `json:"title"`
+}
+
+// Problem defines model for Problem.
+type Problem struct {
+	// Code Example: profile_not_found
+	Code      string  `json:"code"`
+	Detail    *string `json:"detail,omitempty"`
+	Instance  *string `json:"instance,omitempty"`
+	RequestID *string `json:"requestId,omitempty"`
+	Status    int32   `json:"status"`
+	Title     string  `json:"title"`
+
+	// Type Example: https://avito-recap.example/problems/profile-not-found
+	Type string `json:"type"`
+}
+
+// ProfileListResponse defines model for ProfileListResponse.
+type ProfileListResponse struct {
+	Items []ProfileSummary `json:"items"`
+}
+
+// ProfileSummary defines model for ProfileSummary.
+type ProfileSummary struct {
+	// AvailableYears Example: [2025]
+	AvailableYears []int32 `json:"availableYears"`
+	AvatarURL      *string `json:"avatarUrl,omitempty"`
+
+	// DisplayName Example: Алексей
+	DisplayName string `json:"displayName"`
+
+	// ID UUID профиля
+	//
+	// Example: 7a9e06c2-42a2-4cb9-ae7d-3f187a51735c
+	ID            openapi_types.UUID  `json:"id"`
+	LatestRecapID *openapi_types.UUID `json:"latestRecapId,omitempty"`
+
+	// Region Example: Омск
+	Region       string    `json:"region"`
+	RegisteredAt time.Time `json:"registeredAt"`
+
+	// Teaser Короткая нейтральная подсказка для выбора тестового профиля
+	Teaser *string `json:"teaser,omitempty"`
+}
+
+// Recap defines model for Recap.
+type Recap struct {
+	Achievements []Achievement      `json:"achievements"`
+	Behavior     BehaviorProfile    `json:"behavior"`
+	GeneratedAt  time.Time          `json:"generatedAt"`
+	ID           openapi_types.UUID `json:"id"`
+	Metrics      RecapMetrics       `json:"metrics"`
+	NextAction   NextAction         `json:"nextAction"`
+	Period       RecapPeriod        `json:"period"`
+	Profile      ProfileSummary     `json:"profile"`
+	ShareCard    *ShareCard         `json:"shareCard,omitempty"`
+	Story        RecapStory         `json:"story"`
+}
+
+// RecapMetrics defines model for RecapMetrics.
+type RecapMetrics struct {
+	Activity    ActivityMetrics    `json:"activity"`
+	Community   CommunityMetrics   `json:"community"`
+	Features    FeatureMetrics     `json:"features"`
+	Intent      IntentMetrics      `json:"intent"`
+	Interests   InterestMetrics    `json:"interests"`
+	Marketplace MarketplaceMetrics `json:"marketplace"`
+}
+
+// RecapPeriod defines model for RecapPeriod.
+type RecapPeriod struct {
+	// EndsAt Исключительная верхняя граница периода
+	EndsAt   openapi_types.Date `json:"endsAt"`
+	StartsAt openapi_types.Date `json:"startsAt"`
+	Year     int32              `json:"year"`
+}
+
+// RecapStory defines model for RecapStory.
+type RecapStory struct {
+	Cards []StoryCard `json:"cards"`
+
+	// Headline Example: Ваш тип года — «Целеустремлённый покупатель»
+	Headline string `json:"headline"`
+
+	// Summary Example: Вы возвращались к избранным объявлениям и активно использовали доставку.
+	Summary string `json:"summary"`
+}
+
+// ShareCard defines model for ShareCard.
+type ShareCard struct {
+	ImageURL *string `json:"imageUrl,omitempty"`
+	Subtitle string  `json:"subtitle"`
+	Title    string  `json:"title"`
+}
+
+// StoryCard defines model for StoryCard.
+type StoryCard struct {
+	ID string `json:"id"`
+
+	// Kind Стабильный тип карточки для выбора UI-компонента
+	//
+	// Example: top_category
+	Kind        string   `json:"kind"`
+	MediaURL    *string  `json:"mediaUrl,omitempty"`
+	MetricCodes []string `json:"metricCodes,omitempty"`
+	Shareable   bool     `json:"shareable"`
+	Text        string   `json:"text"`
+	Title       string   `json:"title"`
+}
+
+// ProfileID Example: 7a9e06c2-42a2-4cb9-ae7d-3f187a51735c
+type ProfileID = openapi_types.UUID
+
+// RecapID Example: 410942ba-9544-49db-99fb-a02cc19e5b84
+type RecapID = openapi_types.UUID
+
+// BadRequest defines model for BadRequest.
+type BadRequest = Problem
+
+// GenerationUnavailable defines model for GenerationUnavailable.
+type GenerationUnavailable = Problem
+
+// InsufficientActivity defines model for InsufficientActivity.
+type InsufficientActivity = Problem
+
+// InternalError defines model for InternalError.
+type InternalError = Problem
+
+// ProfileNotFound defines model for ProfileNotFound.
+type ProfileNotFound = Problem
+
+// RecapNotFound defines model for RecapNotFound.
+type RecapNotFound = Problem
+
+// ServiceUnavailable defines model for ServiceUnavailable.
+type ServiceUnavailable = Problem
+
+// GenerateRecapJSONRequestBody defines body for GenerateRecap for application/json ContentType.
+type GenerateRecapJSONRequestBody = GenerateRecapRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// CheckHealth Проверить состояние API
+	// (GET /api/v1/health)
+	CheckHealth(ctx *echo.Context) error
+	// ListProfiles Получить тестовые профили
+	// (GET /api/v1/profiles)
+	ListProfiles(ctx *echo.Context) error
+	// GenerateRecap Сгенерировать итоги года
+	// (POST /api/v1/profiles/{profileId}/recaps)
+	GenerateRecap(ctx *echo.Context, profileID ProfileID) error
+	// GetRecap Получить ранее созданный recap
+	// (GET /api/v1/recaps/{recapId})
+	GetRecap(ctx *echo.Context, recapID RecapID) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// CheckHealth converts echo context to params.
+func (w *ServerInterfaceWrapper) CheckHealth(ctx *echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CheckHealth(ctx)
+	return err
+}
+
+// ListProfiles converts echo context to params.
+func (w *ServerInterfaceWrapper) ListProfiles(ctx *echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListProfiles(ctx)
+	return err
+}
+
+// GenerateRecap converts echo context to params.
+func (w *ServerInterfaceWrapper) GenerateRecap(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "profileId" -------------
+	var profileID ProfileID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "profileId", ctx.Param("profileId"), &profileID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter profileId: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GenerateRecap(ctx, profileID)
+	return err
+}
+
+// GetRecap converts echo context to params.
+func (w *ServerInterfaceWrapper) GetRecap(ctx *echo.Context) error {
+	var err error
+	// ------------- Path parameter "recapId" -------------
+	var recapID RecapID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recapId", ctx.Param("recapId"), &recapID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter recapId: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetRecap(ctx, recapID)
+	return err
 }
 
 // This is a simple interface which specifies echo.Route addition functions which
@@ -68,10 +449,276 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // including any per-operation middleware.
 func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options RegisterHandlersOptions) {
 
+	wrapper := ServerInterfaceWrapper{
+		Handler: si,
+	}
+
+	router.GET(options.BaseURL+"/api/v1/health", wrapper.CheckHealth, options.OperationMiddlewares["checkHealth"]...)
+	router.GET(options.BaseURL+"/api/v1/profiles", wrapper.ListProfiles, options.OperationMiddlewares["listProfiles"]...)
+	router.POST(options.BaseURL+"/api/v1/profiles/:profileId/recaps", wrapper.GenerateRecap, options.OperationMiddlewares["generateRecap"]...)
+	router.GET(options.BaseURL+"/api/v1/recaps/:recapId", wrapper.GetRecap, options.OperationMiddlewares["getRecap"]...)
+
+}
+
+type BadRequestApplicationProblemPlusJSONResponse Problem
+
+type GenerationUnavailableApplicationProblemPlusJSONResponse Problem
+
+type InsufficientActivityApplicationProblemPlusJSONResponse Problem
+
+type InternalErrorApplicationProblemPlusJSONResponse Problem
+
+type ProfileNotFoundApplicationProblemPlusJSONResponse Problem
+
+type RecapNotFoundApplicationProblemPlusJSONResponse Problem
+
+type ServiceUnavailableApplicationProblemPlusJSONResponse Problem
+
+type CheckHealthRequestObject struct {
+}
+
+type CheckHealthResponseObject interface {
+	VisitCheckHealthResponse(w http.ResponseWriter) error
+}
+
+type CheckHealth200JSONResponse HealthResponse
+
+func (response CheckHealth200JSONResponse) VisitCheckHealthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CheckHealth503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response CheckHealth503ApplicationProblemPlusJSONResponse) VisitCheckHealthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListProfilesRequestObject struct {
+}
+
+type ListProfilesResponseObject interface {
+	VisitListProfilesResponse(w http.ResponseWriter) error
+}
+
+type ListProfiles200JSONResponse ProfileListResponse
+
+func (response ListProfiles200JSONResponse) VisitListProfilesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListProfiles500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response ListProfiles500ApplicationProblemPlusJSONResponse) VisitListProfilesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateRecapRequestObject struct {
+	ProfileID ProfileID `json:"profileId"`
+	Body      *GenerateRecapJSONRequestBody
+}
+
+type GenerateRecapResponseObject interface {
+	VisitGenerateRecapResponse(w http.ResponseWriter) error
+}
+
+type GenerateRecap200JSONResponse Recap
+
+func (response GenerateRecap200JSONResponse) VisitGenerateRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateRecap400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GenerateRecap400ApplicationProblemPlusJSONResponse) VisitGenerateRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateRecap404ApplicationProblemPlusJSONResponse struct {
+	ProfileNotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response GenerateRecap404ApplicationProblemPlusJSONResponse) VisitGenerateRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateRecap422ApplicationProblemPlusJSONResponse struct {
+	InsufficientActivityApplicationProblemPlusJSONResponse
+}
+
+func (response GenerateRecap422ApplicationProblemPlusJSONResponse) VisitGenerateRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateRecap500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GenerateRecap500ApplicationProblemPlusJSONResponse) VisitGenerateRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GenerateRecap503ApplicationProblemPlusJSONResponse struct {
+	GenerationUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GenerateRecap503ApplicationProblemPlusJSONResponse) VisitGenerateRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetRecapRequestObject struct {
+	RecapID RecapID `json:"recapId"`
+}
+
+type GetRecapResponseObject interface {
+	VisitGetRecapResponse(w http.ResponseWriter) error
+}
+
+type GetRecap200JSONResponse Recap
+
+func (response GetRecap200JSONResponse) VisitGetRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetRecap404ApplicationProblemPlusJSONResponse struct {
+	RecapNotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response GetRecap404ApplicationProblemPlusJSONResponse) VisitGetRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetRecap500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetRecap500ApplicationProblemPlusJSONResponse) VisitGetRecapResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// CheckHealth Проверить состояние API
+	// (GET /api/v1/health)
+	CheckHealth(ctx context.Context, request CheckHealthRequestObject) (CheckHealthResponseObject, error)
+	// ListProfiles Получить тестовые профили
+	// (GET /api/v1/profiles)
+	ListProfiles(ctx context.Context, request ListProfilesRequestObject) (ListProfilesResponseObject, error)
+	// GenerateRecap Сгенерировать итоги года
+	// (POST /api/v1/profiles/{profileId}/recaps)
+	GenerateRecap(ctx context.Context, request GenerateRecapRequestObject) (GenerateRecapResponseObject, error)
+	// GetRecap Получить ранее созданный recap
+	// (GET /api/v1/recaps/{recapId})
+	GetRecap(ctx context.Context, request GetRecapRequestObject) (GetRecapResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *echo.Context, request any) (any, error)
@@ -86,13 +733,186 @@ type strictHandler struct {
 	middlewares []StrictMiddlewareFunc
 }
 
+// CheckHealth operation middleware
+func (sh *strictHandler) CheckHealth(ctx *echo.Context) error {
+	var request CheckHealthRequestObject
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CheckHealth(ctx.Request().Context(), request.(CheckHealthRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CheckHealth")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CheckHealthResponseObject); ok {
+		return validResponse.VisitCheckHealthResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListProfiles operation middleware
+func (sh *strictHandler) ListProfiles(ctx *echo.Context) error {
+	var request ListProfilesRequestObject
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListProfiles(ctx.Request().Context(), request.(ListProfilesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListProfiles")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListProfilesResponseObject); ok {
+		return validResponse.VisitListProfilesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GenerateRecap operation middleware
+func (sh *strictHandler) GenerateRecap(ctx *echo.Context, profileID ProfileID) error {
+	var request GenerateRecapRequestObject
+
+	request.ProfileID = profileID
+
+	var body GenerateRecapJSONRequestBody
+	var err error
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+		// Bind only the request body, so that path and query parameters
+		// are not also bound into the body struct.
+		err = echo.BindBody(ctx, &body)
+	} else {
+		// A custom binder is installed on the Echo instance; defer to it
+		// entirely, since echo.Binder does not expose body-only binding.
+		err = ctx.Bind(&body)
+	}
+	if err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GenerateRecap(ctx.Request().Context(), request.(GenerateRecapRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GenerateRecap")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GenerateRecapResponseObject); ok {
+		return validResponse.VisitGenerateRecapResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetRecap operation middleware
+func (sh *strictHandler) GetRecap(ctx *echo.Context, recapID RecapID) error {
+	var request GetRecapRequestObject
+
+	request.RecapID = recapID
+
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRecap(ctx.Request().Context(), request.(GetRecapRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRecap")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetRecapResponseObject); ok {
+		return validResponse.VisitGetRecapResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"BMCxCgIxDIDhVzn+uZSiW7Yb3cQ3KBIxIE3wwi2l737fxMbHkUla/hRhPy19e+m7x7Y/HxRO/R/mA6HV",
-	"Vhur4KGjhyHc6602CtHzeyBzrSsAAP//",
+	"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",
+	"TZSjYt+pLdob7f8EAAD//w==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -13,14 +13,13 @@ services:
       - postgres-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
+      interval: 2s
       timeout: 5s
-      retries: 10
+      retries: 15
     restart: unless-stopped
 
   migrate:
     image: migrate/migrate:v4.19.1
-    profiles: ["tools"]
     volumes:
       - ./apps/backend/database/migrations:/migrations:ro
       - ./apps/backend/scripts/run-migrations.sh:/run-migrations.sh:ro
@@ -45,6 +44,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   generator:

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 .PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down db-setup seed-data
+=======
+.PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down catalog-import
+>>>>>>> origin/feat/contracts
 
 install:
 	pnpm install --frozen-lockfile
@@ -65,3 +69,8 @@ seed-data:
 	docker compose exec -T postgres psql -U avito-recap -d avito-recap -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || true
 	docker compose run --rm migrate
 	docker compose run --rm generator -dsn postgres://avito-recap:avito-recap@postgres:5432/avito-recap?sslmode=disable -users 100 -listings 1000
+
+catalog-import:
+	go -C apps/backend run ./cmd/catalog-import \
+		-achievements-file ../../catalog/achievements.yaml \
+		-behaviors-file ../../catalog/behaviors.yaml
