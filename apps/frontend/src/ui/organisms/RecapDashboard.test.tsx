@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { expect, test, vi } from "vitest";
 
 import { personas } from "../../api/mocks/fixtures/personas";
@@ -6,8 +7,16 @@ import { RecapDashboard } from "./RecapDashboard";
 
 const { recap } = personas[0];
 
+function renderDashboard(onReplay: () => void) {
+  return render(
+    <MemoryRouter>
+      <RecapDashboard recap={recap} onReplay={onReplay} />
+    </MemoryRouter>,
+  );
+}
+
 test("shows the headline, every achievement, every story card and the next action", () => {
-  render(<RecapDashboard recap={recap} onReplay={vi.fn()} />);
+  renderDashboard(vi.fn());
 
   expect(
     screen.getByRole("heading", { name: recap.story.headline }),
@@ -27,7 +36,7 @@ test("shows the headline, every achievement, every story card and the next actio
 });
 
 test("opens an explanation dialog when an achievement badge is tapped", async () => {
-  render(<RecapDashboard recap={recap} onReplay={vi.fn()} />);
+  renderDashboard(vi.fn());
 
   const [firstAchievement] = recap.achievements;
   fireEvent.click(screen.getByRole("button", { name: firstAchievement.name }));
@@ -39,7 +48,7 @@ test("opens an explanation dialog when an achievement badge is tapped", async ()
 
 test("calls onReplay when the replay button is tapped", () => {
   const onReplay = vi.fn();
-  render(<RecapDashboard recap={recap} onReplay={onReplay} />);
+  renderDashboard(onReplay);
 
   fireEvent.click(screen.getByRole("button", { name: "Смотреть ещё раз" }));
 

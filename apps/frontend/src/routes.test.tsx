@@ -130,6 +130,37 @@ test("finishing the story shows the dashboard, and replay restarts the story", a
   ).toBeInTheDocument();
 });
 
+test("shares only the public share card, not the underlying metrics", async () => {
+  renderAt(`/profiles/${EXPLORER_PROFILE_ID}/generating?year=2025`);
+
+  await screen.findByRole("heading", {
+    name: "Ваш тип года — «Исследователь»",
+  });
+
+  const next = screen.getByRole("button", { name: "Следующая карточка" });
+  fireEvent.click(next);
+  fireEvent.click(next);
+  fireEvent.click(next);
+  fireEvent.click(next);
+  fireEvent.click(next); // dashboard
+
+  fireEvent.click(await screen.findByRole("link", { name: "Поделиться" }));
+
+  expect(
+    await screen.findByText("Алексей — Исследователь года"),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText("132 объявления, 9 категорий, 11 активных месяцев"),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Поделиться" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Скачать картинку" }),
+  ).toBeInTheDocument();
+
+  // The share surface must never leak private counters from `metrics`.
+  expect(screen.queryByText(/132 уникальных объявления/)).not.toBeInTheDocument();
+});
+
 test("generating for an unknown profile renders the error boundary", async () => {
   renderAt("/profiles/00000000-0000-4000-8000-000000000000/generating?year=2025");
 

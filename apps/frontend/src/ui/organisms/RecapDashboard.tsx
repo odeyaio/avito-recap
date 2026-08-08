@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 
 import type { Achievement, Recap } from "../../api/generated/model";
 import { AchievementBadge } from "../molecules/AchievementBadge";
@@ -63,9 +64,14 @@ export function RecapDashboard({ recap, onReplay }: RecapDashboardProps) {
 
       <NextActionCta nextAction={recap.nextAction} />
 
-      <Button variant="outlined" onClick={onReplay} sx={{ alignSelf: "center" }}>
-        Смотреть ещё раз
-      </Button>
+      <Stack direction="row" spacing={2} sx={{ alignSelf: "center" }}>
+        <Button variant="outlined" onClick={onReplay}>
+          Смотреть ещё раз
+        </Button>
+        <Button component={RouterLink} to={`/recap/${recap.id}/share`} variant="text">
+          Поделиться
+        </Button>
+      </Stack>
 
       <ExplanationDialog
         open={selected !== null}
