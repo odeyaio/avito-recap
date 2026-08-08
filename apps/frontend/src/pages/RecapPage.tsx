@@ -2,8 +2,10 @@ import Typography from "@mui/material/Typography";
 import { data, useParams, type LoaderFunctionArgs } from "react-router-dom";
 
 import { getGetRecapQueryOptions, useGetRecap } from "../api/generated/client";
+import type { StoryCard } from "../api/generated/model";
 import { queryClient } from "../api/client";
 import { ScreenLayout } from "../ui/templates/ScreenLayout";
+import { StoryPlayerLayout } from "../ui/templates/StoryPlayerLayout";
 
 export function recapLoader({ params }: LoaderFunctionArgs) {
   const recapId = params.recapId;
@@ -27,14 +29,15 @@ export function RecapPage() {
     );
   }
 
-  return (
-    <ScreenLayout>
-      <Typography variant="h4" component="h1">
-        {response.data.story.headline}
-      </Typography>
-      <Typography color="text.secondary">
-        {response.data.story.summary}
-      </Typography>
-    </ScreenLayout>
-  );
+  const { story } = response.data;
+  const introCard: StoryCard = {
+    id: "intro",
+    kind: "intro",
+    title: story.headline,
+    text: story.summary,
+    shareable: true,
+  };
+  const slides = [introCard, ...story.cards];
+
+  return <StoryPlayerLayout cards={slides} />;
 }

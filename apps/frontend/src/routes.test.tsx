@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { expect, test } from "vitest";
 
@@ -44,6 +44,33 @@ test("generating a recap redirects to the recap screen", async () => {
   expect(
     await screen.findByRole("heading", {
       name: "Ваш тип года — «Исследователь»",
+    }),
+  ).toBeInTheDocument();
+});
+
+test("steps through story cards via tap and keyboard", async () => {
+  renderAt(`/profiles/${EXPLORER_PROFILE_ID}/generating?year=2025`);
+
+  await screen.findByRole("heading", {
+    name: "Ваш тип года — «Исследователь»",
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: "Следующая карточка" }));
+  expect(
+    await screen.findByRole("heading", {
+      name: "Электроника — ваша главная тема",
+    }),
+  ).toBeInTheDocument();
+
+  fireEvent.keyDown(window, { key: "ArrowRight" });
+  expect(
+    await screen.findByRole("heading", { name: "18 дней подряд" }),
+  ).toBeInTheDocument();
+
+  fireEvent.keyDown(window, { key: "ArrowLeft" });
+  expect(
+    await screen.findByRole("heading", {
+      name: "Электроника — ваша главная тема",
     }),
   ).toBeInTheDocument();
 });
