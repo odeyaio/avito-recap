@@ -4,6 +4,10 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { expect, test } from "vitest";
 
 import { queryClient } from "./api/client";
+import {
+  GENERATION_UNAVAILABLE_PROFILE_ID,
+  INSUFFICIENT_ACTIVITY_PROFILE_ID,
+} from "./api/mocks/handlers";
 import { routes } from "./routes";
 
 const EXPLORER_PROFILE_ID = "11111111-1111-4111-8111-111111111111";
@@ -48,4 +52,32 @@ test("generating for an unknown profile renders the error boundary", async () =>
   renderAt("/profiles/00000000-0000-4000-8000-000000000000/generating?year=2025");
 
   expect(await screen.findByText("Профиль не найден")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Повторить" })).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("link", { name: "Выбрать другой профиль" }),
+  ).toBeInTheDocument();
+});
+
+test("insufficient activity renders a friendly non-retryable error", async () => {
+  renderAt(
+    `/profiles/${INSUFFICIENT_ACTIVITY_PROFILE_ID}/generating?year=2025`,
+  );
+
+  expect(
+    await screen.findByText("Недостаточно активности"),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Повторить" })).not.toBeInTheDocument();
+});
+
+test("generation unavailable renders a retryable error", async () => {
+  renderAt(
+    `/profiles/${GENERATION_UNAVAILABLE_PROFILE_ID}/generating?year=2025`,
+  );
+
+  expect(
+    await screen.findByText("Сервис генерации недоступен"),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Повторить" }),
+  ).toBeInTheDocument();
 });

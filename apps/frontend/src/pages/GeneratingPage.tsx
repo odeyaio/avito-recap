@@ -1,5 +1,3 @@
-import CircularProgress from "@mui/material/CircularProgress";
-import Typography from "@mui/material/Typography";
 import { data, redirect, type LoaderFunctionArgs } from "react-router-dom";
 
 import {
@@ -7,7 +5,7 @@ import {
   getGetRecapQueryKey,
 } from "../api/generated/client";
 import { queryClient } from "../api/client";
-import { ScreenLayout } from "../ui/templates/ScreenLayout";
+import { GeneratingOverlay } from "../ui/organisms/GeneratingOverlay";
 
 export async function generatingLoader({ params, request }: LoaderFunctionArgs) {
   const profileId = params.profileId;
@@ -33,12 +31,5 @@ export async function generatingLoader({ params, request }: LoaderFunctionArgs) 
 }
 
 export function GeneratingPage() {
-  return (
-    <ScreenLayout>
-      <CircularProgress sx={{ alignSelf: "center" }} />
-      <Typography sx={{ alignSelf: "center" }}>
-        Собираем ваши итоги года…
-      </Typography>
-    </ScreenLayout>
-  );
+  return <GeneratingOverlay />;
 }
