@@ -6,6 +6,22 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import { useMutation, useQuery } from "@tanstack/react-query";
+import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult,
+} from "@tanstack/react-query";
+
 import type {
   BadRequestResponse,
   GenerateRecapRequest,
@@ -19,6 +35,24 @@ import type {
   RecapNotFoundResponse,
   ServiceUnavailableResponse,
 } from "./model";
+
+const withQueryKey = <T extends object, K>(
+  query: T,
+  queryKey: K,
+): T & { queryKey: K } => {
+  const result = { queryKey } as T & { queryKey: K };
+  for (const key of Object.keys(query)) {
+    // The explicit queryKey always wins, matching the previous
+    // `{ ...query, queryKey }` spread where it was set last.
+    if (key === "queryKey") continue;
+    Object.defineProperty(result, key, {
+      enumerable: true,
+      configurable: true,
+      get: () => (query as Record<string, unknown>)[key],
+    });
+  }
+  return result;
+};
 
 export type checkHealthResponse200 = {
   data: HealthResponse;
@@ -65,6 +99,125 @@ export const checkHealth = async (
   } as checkHealthResponse;
 };
 
+export const getCheckHealthQueryKey = () => {
+  return [`/api/v1/health`] as const;
+};
+
+export const getCheckHealthQueryOptions = <
+  TData = Awaited<ReturnType<typeof checkHealth>>,
+  TError = ServiceUnavailableResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof checkHealth>>, TError, TData>
+  >;
+  fetch?: RequestInit;
+}) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getCheckHealthQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof checkHealth>>> = ({
+    signal,
+  }) => checkHealth({ signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof checkHealth>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type CheckHealthQueryResult = NonNullable<
+  Awaited<ReturnType<typeof checkHealth>>
+>;
+export type CheckHealthQueryError = ServiceUnavailableResponse;
+
+export function useCheckHealth<
+  TData = Awaited<ReturnType<typeof checkHealth>>,
+  TError = ServiceUnavailableResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof checkHealth>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof checkHealth>>,
+          TError,
+          Awaited<ReturnType<typeof checkHealth>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useCheckHealth<
+  TData = Awaited<ReturnType<typeof checkHealth>>,
+  TError = ServiceUnavailableResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof checkHealth>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof checkHealth>>,
+          TError,
+          Awaited<ReturnType<typeof checkHealth>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useCheckHealth<
+  TData = Awaited<ReturnType<typeof checkHealth>>,
+  TError = ServiceUnavailableResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof checkHealth>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Проверить состояние API
+ */
+
+export function useCheckHealth<
+  TData = Awaited<ReturnType<typeof checkHealth>>,
+  TError = ServiceUnavailableResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof checkHealth>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCheckHealthQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export type listProfilesResponse200 = {
   data: ProfileListResponse;
   status: 200;
@@ -110,6 +263,125 @@ export const listProfiles = async (
     headers: res.headers,
   } as listProfilesResponse;
 };
+
+export const getListProfilesQueryKey = () => {
+  return [`/api/v1/profiles`] as const;
+};
+
+export const getListProfilesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProfiles>>,
+  TError = InternalErrorResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof listProfiles>>, TError, TData>
+  >;
+  fetch?: RequestInit;
+}) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListProfilesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listProfiles>>> = ({
+    signal,
+  }) => listProfiles({ signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProfiles>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListProfilesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProfiles>>
+>;
+export type ListProfilesQueryError = InternalErrorResponse;
+
+export function useListProfiles<
+  TData = Awaited<ReturnType<typeof listProfiles>>,
+  TError = InternalErrorResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listProfiles>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listProfiles>>,
+          TError,
+          Awaited<ReturnType<typeof listProfiles>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListProfiles<
+  TData = Awaited<ReturnType<typeof listProfiles>>,
+  TError = InternalErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listProfiles>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listProfiles>>,
+          TError,
+          Awaited<ReturnType<typeof listProfiles>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListProfiles<
+  TData = Awaited<ReturnType<typeof listProfiles>>,
+  TError = InternalErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listProfiles>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Получить тестовые профили
+ */
+
+export function useListProfiles<
+  TData = Awaited<ReturnType<typeof listProfiles>>,
+  TError = InternalErrorResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listProfiles>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListProfilesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export type generateRecapResponse200 = {
   data: Recap;
@@ -190,6 +462,91 @@ export const generateRecap = async (
   } as generateRecapResponse;
 };
 
+export const getGenerateRecapMutationOptions = <
+  TError =
+    | BadRequestResponse
+    | ProfileNotFoundResponse
+    | InsufficientActivityResponse
+    | InternalErrorResponse
+    | GenerationUnavailableResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateRecap>>,
+    TError,
+    { profileId: string; data: GenerateRecapRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateRecap>>,
+  TError,
+  { profileId: string; data: GenerateRecapRequest },
+  TContext
+> => {
+  const mutationKey = ["generateRecap"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateRecap>>,
+    { profileId: string; data: GenerateRecapRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return generateRecap(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateRecapMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateRecap>>
+>;
+export type GenerateRecapMutationBody = GenerateRecapRequest;
+export type GenerateRecapMutationError =
+  | BadRequestResponse
+  | ProfileNotFoundResponse
+  | InsufficientActivityResponse
+  | InternalErrorResponse
+  | GenerationUnavailableResponse;
+
+/**
+ * @summary Сгенерировать итоги года
+ */
+export const useGenerateRecap = <
+  TError =
+    | BadRequestResponse
+    | ProfileNotFoundResponse
+    | InsufficientActivityResponse
+    | InternalErrorResponse
+    | GenerationUnavailableResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof generateRecap>>,
+      TError,
+      { profileId: string; data: GenerateRecapRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof generateRecap>>,
+  TError,
+  { profileId: string; data: GenerateRecapRequest },
+  TContext
+> => {
+  return useMutation(getGenerateRecapMutationOptions(options), queryClient);
+};
+
 export type getRecapResponse200 = {
   data: Recap;
   status: 200;
@@ -237,3 +594,132 @@ export const getRecap = async (
   const data: getRecapResponse["data"] = body ? JSON.parse(body) : {};
   return { data, status: res.status, headers: res.headers } as getRecapResponse;
 };
+
+export const getGetRecapQueryKey = (recapId: string) => {
+  return [`/api/v1/recaps/${recapId}`] as const;
+};
+
+export const getGetRecapQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRecap>>,
+  TError = RecapNotFoundResponse | InternalErrorResponse,
+>(
+  recapId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getRecap>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRecapQueryKey(recapId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRecap>>> = ({
+    signal,
+  }) => getRecap(recapId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recapId !== null && recapId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getRecap>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetRecapQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRecap>>
+>;
+export type GetRecapQueryError = RecapNotFoundResponse | InternalErrorResponse;
+
+export function useGetRecap<
+  TData = Awaited<ReturnType<typeof getRecap>>,
+  TError = RecapNotFoundResponse | InternalErrorResponse,
+>(
+  recapId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getRecap>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecap>>,
+          TError,
+          Awaited<ReturnType<typeof getRecap>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetRecap<
+  TData = Awaited<ReturnType<typeof getRecap>>,
+  TError = RecapNotFoundResponse | InternalErrorResponse,
+>(
+  recapId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getRecap>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecap>>,
+          TError,
+          Awaited<ReturnType<typeof getRecap>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetRecap<
+  TData = Awaited<ReturnType<typeof getRecap>>,
+  TError = RecapNotFoundResponse | InternalErrorResponse,
+>(
+  recapId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getRecap>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Получить ранее созданный recap
+ */
+
+export function useGetRecap<
+  TData = Awaited<ReturnType<typeof getRecap>>,
+  TError = RecapNotFoundResponse | InternalErrorResponse,
+>(
+  recapId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getRecap>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetRecapQueryOptions(recapId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
