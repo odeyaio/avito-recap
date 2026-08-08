@@ -2,10 +2,11 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
-import type { StoryCard } from "../../api/generated/model";
+import type { Recap, StoryCard } from "../../api/generated/model";
 
 export interface StoryCardContentProps {
   card: StoryCard;
+  recap: Recap;
 }
 
 export function StoryCardContent({ card }: StoryCardContentProps) {

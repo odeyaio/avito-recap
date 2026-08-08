@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import { useEffect } from "react";
 
-import type { StoryCard } from "../../api/generated/model";
+import type { Recap, StoryCard } from "../../api/generated/model";
 import { useStoryPlayer } from "../../features/story-player/useStoryPlayer";
 import { StoryCardRenderer } from "../organisms/StoryCardRenderer";
 import { StoryProgressBars } from "../molecules/StoryProgressBars";
@@ -11,10 +11,11 @@ const AUTO_ADVANCE_MS = 6000;
 
 export interface StoryPlayerLayoutProps {
   cards: StoryCard[];
+  recap: Recap;
   onComplete?: () => void;
 }
 
-export function StoryPlayerLayout({ cards, onComplete }: StoryPlayerLayoutProps) {
+export function StoryPlayerLayout({ cards, recap, onComplete }: StoryPlayerLayoutProps) {
   const player = useStoryPlayer({
     slideCount: cards.length,
     autoAdvanceMs: AUTO_ADVANCE_MS,
@@ -73,7 +74,9 @@ export function StoryPlayerLayout({ cards, onComplete }: StoryPlayerLayoutProps)
           pointerEvents: "none",
         }}
       >
-        {currentCard ? <StoryCardRenderer card={currentCard} /> : null}
+        {currentCard ? (
+          <StoryCardRenderer card={currentCard} recap={recap} />
+        ) : null}
       </Box>
     </Box>
   );

@@ -75,6 +75,30 @@ test("steps through story cards via tap and keyboard", async () => {
   ).toBeInTheDocument();
 });
 
+test("opens an explanation dialog for a behavior card reached through the player", async () => {
+  renderAt(`/profiles/${EXPLORER_PROFILE_ID}/generating?year=2025`);
+
+  await screen.findByRole("heading", {
+    name: "Ваш тип года — «Исследователь»",
+  });
+
+  const next = screen.getByRole("button", { name: "Следующая карточка" });
+  fireEvent.click(next); // top_category
+  fireEvent.click(next); // activity_streak
+  fireEvent.click(next); // behavior_reveal
+
+  const behaviorHeading = await screen.findByRole("heading", {
+    name: "Исследователь",
+  });
+  fireEvent.click(behaviorHeading);
+
+  expect(
+    await screen.findByText(
+      "Вы посмотрели 132 уникальных объявления в 9 разных категориях и почти не выходили на контакт с продавцами — вам было интереснее изучать, чем покупать.",
+    ),
+  ).toBeInTheDocument();
+});
+
 test("generating for an unknown profile renders the error boundary", async () => {
   renderAt("/profiles/00000000-0000-4000-8000-000000000000/generating?year=2025");
 

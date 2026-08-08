@@ -39,5 +39,5 @@ export function RecapPage() {
   };
   const slides = [introCard, ...story.cards];
 
-  return <StoryPlayerLayout cards={slides} />;
+  return <StoryPlayerLayout cards={slides} recap={response.data} />;
 }
