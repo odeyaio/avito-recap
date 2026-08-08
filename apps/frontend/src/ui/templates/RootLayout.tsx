@@ -13,7 +13,7 @@ export function RootLayout() {
     GENERATING_PATH.test(navigation.location.pathname);
 
   return (
-    <Box sx={{ minHeight: "100vh" }}>
+    <Box component="main" sx={{ minHeight: "100vh" }}>
       {navigation.state === "loading" && !isNavigatingToGenerating ? (
         <LinearProgress
           aria-label="Загрузка"

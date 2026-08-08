@@ -1,7 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+import { stubMatchMedia } from "../../test/stubMatchMedia";
 import { useStoryPlayer } from "./useStoryPlayer";
+
+const originalMatchMedia = window.matchMedia;
 
 test("advances and rewinds within bounds", () => {
   const { result } = renderHook(() => useStoryPlayer({ slideCount: 3 }));
@@ -49,6 +52,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  window.matchMedia = originalMatchMedia;
 });
 
 test("auto-advances on a timer and stops on the last slide", () => {
@@ -85,4 +89,17 @@ test("pausing stops the auto-advance timer", () => {
     vi.advanceTimersByTime(1000);
   });
   expect(result.current.index).toBe(1);
+});
+
+test("never auto-advances when the user prefers reduced motion", () => {
+  stubMatchMedia(true);
+  const { result } = renderHook(() =>
+    useStoryPlayer({ slideCount: 3, autoAdvanceMs: 1000 }),
+  );
+
+  act(() => {
+    vi.advanceTimersByTime(10000);
+  });
+
+  expect(result.current.index).toBe(0);
 });

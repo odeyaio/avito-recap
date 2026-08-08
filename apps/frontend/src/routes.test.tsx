@@ -161,6 +161,35 @@ test("shares only the public share card, not the underlying metrics", async () =
   expect(screen.queryByText(/132 уникальных объявления/)).not.toBeInTheDocument();
 });
 
+test("golden path: intro -> pick a profile -> story -> dashboard -> next action", async () => {
+  renderAt("/");
+
+  fireEvent.click(
+    await screen.findByRole("link", { name: "Смотреть" }),
+  );
+
+  fireEvent.click(
+    await screen.findByRole("link", { name: /Алексей · Омск/ }),
+  );
+
+  await screen.findByRole("heading", {
+    name: "Ваш тип года — «Исследователь»",
+  });
+
+  const next = await screen.findByRole("button", { name: "Следующая карточка" });
+  fireEvent.click(next); // top_category
+  fireEvent.click(next); // activity_streak
+  fireEvent.click(next); // behavior_reveal
+  fireEvent.click(next); // achievement_spotlight (last slide)
+  fireEvent.click(next); // past the last slide -> dashboard
+
+  const nextActionLink = await screen.findByRole("link", { name: "Перейти" });
+  expect(nextActionLink).toHaveAttribute("href", "/search?category=electronics");
+  expect(
+    screen.getByText("Продолжите изучать электронику — с сентября вы возвращались к ней чаще всего."),
+  ).toBeInTheDocument();
+});
+
 test("generating for an unknown profile renders the error boundary", async () => {
   renderAt("/profiles/00000000-0000-4000-8000-000000000000/generating?year=2025");
 

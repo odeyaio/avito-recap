@@ -1,23 +1,12 @@
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { data, useParams, type LoaderFunctionArgs } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
-import { getGetRecapQueryOptions, useGetRecap } from "../api/generated/client";
+import { useGetRecap } from "../api/generated/client";
 import type { StoryCard } from "../api/generated/model";
-import { queryClient } from "../api/client";
 import { RecapDashboard } from "../ui/organisms/RecapDashboard";
 import { ScreenLayout } from "../ui/templates/ScreenLayout";
 import { StoryPlayerLayout } from "../ui/templates/StoryPlayerLayout";
-
-export function recapLoader({ params }: LoaderFunctionArgs) {
-  const recapId = params.recapId;
-
-  if (!recapId) {
-    throw data({ title: "Recap не указан" }, { status: 400 });
-  }
-
-  return queryClient.ensureQueryData(getGetRecapQueryOptions(recapId));
-}
 
 export function RecapPage() {
   const { recapId } = useParams<{ recapId: string }>();
