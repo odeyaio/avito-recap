@@ -1,3 +1,5 @@
+import Container from "@mui/material/Container";
+import Stack from "@mui/material/Stack";
 import type { ReactNode } from "react";
 
 export interface ScreenLayoutProps {
@@ -6,8 +8,10 @@ export interface ScreenLayoutProps {
 
 export function ScreenLayout({ children }: ScreenLayoutProps) {
   return (
-    <div className="screen-layout">
-      <main className="screen-layout__content">{children}</main>
-    </div>
+    <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 6 } }}>
+      <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
+        {children}
+      </Stack>
+    </Container>
   );
 }

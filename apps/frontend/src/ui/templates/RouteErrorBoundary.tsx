@@ -1,3 +1,4 @@
+import Typography from "@mui/material/Typography";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 
 import type { Problem } from "../../api/generated/model";
@@ -13,16 +14,24 @@ export function RouteErrorBoundary() {
   if (isRouteErrorResponse(error) && isProblem(error.data)) {
     return (
       <ScreenLayout>
-        <h1>{error.data.title}</h1>
-        <p>{error.data.detail ?? "Попробуйте ещё раз чуть позже."}</p>
+        <Typography variant="h4" component="h1">
+          {error.data.title}
+        </Typography>
+        <Typography color="text.secondary">
+          {error.data.detail ?? "Попробуйте ещё раз чуть позже."}
+        </Typography>
       </ScreenLayout>
     );
   }
 
   return (
     <ScreenLayout>
-      <h1>Что-то пошло не так</h1>
-      <p>Попробуйте вернуться на главную и повторить попытку.</p>
+      <Typography variant="h4" component="h1">
+        Что-то пошло не так
+      </Typography>
+      <Typography color="text.secondary">
+        Попробуйте вернуться на главную и повторить попытку.
+      </Typography>
     </ScreenLayout>
   );
 }

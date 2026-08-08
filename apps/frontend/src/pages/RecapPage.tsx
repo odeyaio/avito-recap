@@ -1,3 +1,4 @@
+import Typography from "@mui/material/Typography";
 import { data, useParams, type LoaderFunctionArgs } from "react-router-dom";
 
 import { getGetRecapQueryOptions, useGetRecap } from "../api/generated/client";
@@ -21,15 +22,19 @@ export function RecapPage() {
   if (!response || response.status !== 200) {
     return (
       <ScreenLayout>
-        <p>Не удалось загрузить recap.</p>
+        <Typography>Не удалось загрузить recap.</Typography>
       </ScreenLayout>
     );
   }
 
   return (
     <ScreenLayout>
-      <h1>{response.data.story.headline}</h1>
-      <p>{response.data.story.summary}</p>
+      <Typography variant="h4" component="h1">
+        {response.data.story.headline}
+      </Typography>
+      <Typography color="text.secondary">
+        {response.data.story.summary}
+      </Typography>
     </ScreenLayout>
   );
 }

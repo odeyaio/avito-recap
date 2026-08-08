@@ -1,3 +1,5 @@
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
 import { data, redirect, type LoaderFunctionArgs } from "react-router-dom";
 
 import {
@@ -33,7 +35,10 @@ export async function generatingLoader({ params, request }: LoaderFunctionArgs) 
 export function GeneratingPage() {
   return (
     <ScreenLayout>
-      <p>Собираем ваши итоги года…</p>
+      <CircularProgress sx={{ alignSelf: "center" }} />
+      <Typography sx={{ alignSelf: "center" }}>
+        Собираем ваши итоги года…
+      </Typography>
     </ScreenLayout>
   );
 }

@@ -1,3 +1,4 @@
+import Typography from "@mui/material/Typography";
 import { useParams } from "react-router-dom";
 
 import { useGetRecap } from "../api/generated/client";
@@ -12,15 +13,17 @@ export function SharePage() {
   if (!shareCard) {
     return (
       <ScreenLayout>
-        <p>Нечем поделиться.</p>
+        <Typography>Нечем поделиться.</Typography>
       </ScreenLayout>
     );
   }
 
   return (
     <ScreenLayout>
-      <h1>{shareCard.title}</h1>
-      <p>{shareCard.subtitle}</p>
+      <Typography variant="h4" component="h1">
+        {shareCard.title}
+      </Typography>
+      <Typography color="text.secondary">{shareCard.subtitle}</Typography>
     </ScreenLayout>
   );
 }

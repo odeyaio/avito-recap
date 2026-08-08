@@ -1,11 +1,13 @@
 import { QueryClientProvider } from "@tanstack/react-query";
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "@mui/material/styles";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import { queryClient } from "./api/client";
 import { routes } from "./routes";
-import "./styles.css";
+import { theme } from "./theme";
 
 async function enableMockingIfNeeded() {
   if (!import.meta.env.DEV || import.meta.env.VITE_API_MOCK !== "true") {
@@ -27,9 +29,12 @@ const router = createBrowserRouter(routes);
 enableMockingIfNeeded().then(() => {
   createRoot(root).render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
+      <ThemeProvider theme={theme} defaultMode="system">
+        <CssBaseline enableColorScheme />
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </ThemeProvider>
     </StrictMode>,
   );
 });
