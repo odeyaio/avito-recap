@@ -32,4 +32,12 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ["src/pages/**/*.tsx", "src/routes.tsx"],
+    rules: {
+      // Route modules follow React Router's data-router convention of
+      // co-locating a loader/action next to the route's Component.
+      "react-refresh/only-export-components": "off",
+    },
+  },
 );

@@ -1,20 +1,15 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import { useListProfiles } from "../api/generated/client";
-import { Button } from "../ui/atoms/Button";
+import { getListProfilesQueryOptions, useListProfiles } from "../api/generated/client";
+import { queryClient } from "../api/client";
 import { ScreenLayout } from "../ui/templates/ScreenLayout";
 
-export function ProfilesPage() {
-  const navigate = useNavigate();
-  const { data: response, isLoading } = useListProfiles();
+export function profilesLoader() {
+  return queryClient.ensureQueryData(getListProfilesQueryOptions());
+}
 
-  if (isLoading) {
-    return (
-      <ScreenLayout>
-        <p>Загружаем тестовые профили…</p>
-      </ScreenLayout>
-    );
-  }
+export function ProfilesPage() {
+  const { data: response } = useListProfiles();
 
   if (!response || response.status !== 200) {
     return (
@@ -28,16 +23,21 @@ export function ProfilesPage() {
     <ScreenLayout>
       <h1>Выберите тестовый профиль</h1>
       <ul className="profile-list">
-        {response.data.items.map((profile) => (
-          <li key={profile.id}>
-            <Button
-              onClick={() => navigate(`/profiles/${profile.id}/generating`)}
-            >
-              {profile.displayName} · {profile.region}
-              {profile.teaser ? ` — ${profile.teaser}` : ""}
-            </Button>
-          </li>
-        ))}
+        {response.data.items.map((profile) => {
+          const year = Math.max(...profile.availableYears);
+
+          return (
+            <li key={profile.id}>
+              <Link
+                to={`/profiles/${profile.id}/generating?year=${year}`}
+                className="button"
+              >
+                {profile.displayName} · {profile.region}
+                {profile.teaser ? ` — ${profile.teaser}` : ""}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </ScreenLayout>
   );
