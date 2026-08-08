@@ -99,6 +99,37 @@ test("opens an explanation dialog for a behavior card reached through the player
   ).toBeInTheDocument();
 });
 
+test("finishing the story shows the dashboard, and replay restarts the story", async () => {
+  renderAt(`/profiles/${EXPLORER_PROFILE_ID}/generating?year=2025`);
+
+  await screen.findByRole("heading", {
+    name: "Ваш тип года — «Исследователь»",
+  });
+
+  const next = screen.getByRole("button", { name: "Следующая карточка" });
+  fireEvent.click(next); // top_category
+  fireEvent.click(next); // activity_streak
+  fireEvent.click(next); // behavior_reveal
+  fireEvent.click(next); // achievement_spotlight (last slide)
+  fireEvent.click(next); // past the last slide -> dashboard
+
+  expect(
+    await screen.findByRole("link", { name: "Перейти" }),
+  ).toHaveAttribute("href", "/search?category=electronics");
+  expect(
+    screen.getByRole("button", { name: "Исследователь года" }),
+  ).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Смотреть ещё раз" }));
+
+  expect(
+    await screen.findByRole("button", { name: "Следующая карточка" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: "Ваш тип года — «Исследователь»" }),
+  ).toBeInTheDocument();
+});
+
 test("generating for an unknown profile renders the error boundary", async () => {
   renderAt("/profiles/00000000-0000-4000-8000-000000000000/generating?year=2025");
 
