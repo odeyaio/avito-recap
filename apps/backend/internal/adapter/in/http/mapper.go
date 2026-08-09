@@ -132,14 +132,6 @@ func recapResponse(recap model.Recap) (generated.Recap, error) {
 	}, nil
 }
 
-// shareCardResponse builds the compact, safe-to-share summary of a recap.
-// generated.ShareCard only has three fields (Title/Subtitle/ImageURL — see
-// contracts/openapi.yaml, untouched here), so "more data" has to be packed
-// into those rather than added as new fields, which would need an openapi.yaml
-// change plus `make generate-go` run locally (no Go toolchain/network here to
-// do that myself). Everything used below is already public elsewhere in the
-// same recap response (interests.topCategories, achievement count) — nothing
-// new is exposed, it's just surfaced on the card instead of only in Metrics.
 func shareCardResponse(
 	year int,
 	primary generated.BehaviorMatch,
