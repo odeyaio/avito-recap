@@ -51,12 +51,15 @@ type GeneratorConfig struct {
 	EventContactOffsetMinutes            int
 	EventDealOffsetMinutes               int
 	EventReviewOffsetHours               int
+	DealCompletionMinHours               int
+	DealCompletionMaxHours               int
 	EventRandomSpreadSeconds             int
 	ListingEditProbability               float64
 	ListingEditMinDays                   int
 	ListingEditMaxDays                   int
 	ShareProbability                     float64
 	CancelDealProbability                float64
+	CancelAfterDealProbability           float64
 }
 
 func DefaultGeneratorConfig() GeneratorConfig {
@@ -82,12 +85,15 @@ func DefaultGeneratorConfig() GeneratorConfig {
 		EventContactOffsetMinutes:            15,
 		EventDealOffsetMinutes:               30,
 		EventReviewOffsetHours:               2,
+		DealCompletionMinHours:               1,
+		DealCompletionMaxHours:               72,
 		EventRandomSpreadSeconds:             30,
 		ListingEditProbability:               0.30,
 		ListingEditMinDays:                   1,
 		ListingEditMaxDays:                   7,
 		ShareProbability:                     0.10,
 		CancelDealProbability:                0.20,
+		CancelAfterDealProbability:           0.15,
 	}
 }
 

@@ -263,22 +263,45 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 				
 				if rnd.Float64() < clamp(cfg.Deal, 0, 1) {
 					dealTime := intentBaseTime.Add(time.Duration(generatorConfig.EventDealOffsetMinutes) * time.Minute)
+					
+					// Check if deal should be cancelled after creation
+					isCancelled := rnd.Float64() < generatorConfig.CancelAfterDealProbability
+					
+					var completedAt *time.Time
+					var status model.DealStatus
+					
+					if isCancelled {
+						// Cancelled deals have no completion time
+						status = model.DealStatus("cancelled")
+						completedAt = nil
+					} else {
+						// Random completion time between min and max hours
+						completionHours := generatorConfig.DealCompletionMinHours + rnd.Intn(generatorConfig.DealCompletionMaxHours-generatorConfig.DealCompletionMinHours+1)
+						completedAtTime := dealTime.Add(time.Duration(completionHours) * time.Hour)
+						completedAt = &completedAtTime
+						status = model.DealStatus("completed")
+					}
+					
 					deal := model.Deal{
 						ID:           uuid.New(),
 						ListingID:    listing.ID,
 						BuyerID:      user.ID,
 						CreatedAt:    dealTime,
-						CompletedAt:  nil,
-						Status:       "pending",
+						CompletedAt:  completedAt,
+						Status:       status,
 						DeliveryUsed: listing.DeliveryAvailable,
 						PriceBand:    listing.PriceBand,
 					}
 					deals = append(deals, deal)
-					soldListings[listing.ID] = true
+					
+					// Only mark listing as sold if deal is not cancelled
+					if !isCancelled {
+						soldListings[listing.ID] = true
+					}
 
 					// REVIEW stage - only for completed deals
-					if rnd.Float64() < clamp(cfg.Review, 0, 1) && user.ID != listing.SellerID {
-						reviewTime := dealTime.Add(time.Duration(generatorConfig.EventReviewOffsetHours) * time.Hour)
+					if !isCancelled && rnd.Float64() < clamp(cfg.Review, 0, 1) && user.ID != listing.SellerID {
+						reviewTime := completedAt.Add(time.Duration(generatorConfig.EventReviewOffsetHours) * time.Hour)
 						review := model.Review{
 							ID:          uuid.New(),
 							DealID:      &deal.ID,

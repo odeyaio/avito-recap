@@ -117,11 +117,13 @@ make seed-data
 - `IntentCountMax` — максимальное количество интентов на пользователя.
 - `IntentSpreadDays` — разброс между разными интентами в днях.
 - `EventFavoriteOffsetMinutes` / `EventContactOffsetMinutes` / `EventDealOffsetMinutes` / `EventReviewOffsetHours` — временные смещения между событиями.
+- `DealCompletionMinHours` / `DealCompletionMaxHours` — диапазон часов для завершения сделки (сделки завершаются автоматически через случайное время в этом диапазоне).
+- `CancelDealProbability` — вероятность отмены сделки после контакта (не приводит к созданию сделки).
+- `CancelAfterDealProbability` — вероятность отмены уже созданной сделки (статус "cancelled", без времени завершения).
 - `EventRandomSpreadSeconds` — случайное смещение времени событий для реалистичности.
 - `ListingEditProbability` — вероятность редактирования объявления.
 - `ListingEditMinDays` / `ListingEditMaxDays` — диапазон дней после публикации для редактирования.
 - `ShareProbability` — вероятность отправки объявления после просмотра.
-- `CancelDealProbability` — вероятность отмены сделки после контакта.
 
 ## Параметры пользователей и шаблоны поведения
 
