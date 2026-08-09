@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./behavior-catalog.schema.json
 
-version: v5
+version: v6
 
 behaviors:
   - code: explorer
@@ -250,14 +250,14 @@ behaviors:
       targetType: search
       href: https://www.avito.ru/rossiya
 
+  # Catch-all fallback: only matches if none of the more specific behaviors
+  # above matched, but the user had at least 1 action in the period. Without
+  # it, "medium activity" users (too much for rare_user, not enough for
+  # explorer/active_buyer/active_seller/etc.) got 422 insufficient_activity
+  # instead of a recap. name/description below are user-facing, not internal.
   - code: casual_activity
     name: Активность за период
-    description: >-
-      Универсальный запасной вариант — срабатывает только если ни один из
-      более специфичных сценариев выше не подошёл, но за период была хоть
-      какая-то активность. Без него пользователи со "средней" активностью
-      (недостаточной для explorer/active_buyer/active_seller и т.д., но
-      больше чем rare_user) получали 422 insufficient_activity вместо recap.
+    description: Заметная активность за год, но пока без выраженного сценария
     sortOrder: 140
     rule:
       all:
