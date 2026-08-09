@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./behavior-catalog.schema.json
 
-version: v3
+version: v4
 
 behaviors:
   - code: explorer
@@ -21,7 +21,8 @@ behaviors:
     defaultAction:
       code: open_frequent_interest_feed
       title: Посмотреть предложения по частым интересам
-      resolver: frequent_interest_feed
+      targetType: search
+      href: https://www.avito.ru/rossiya?q={category}
 
   - code: determined_buyer
     name: Целеустремлённый покупатель
@@ -44,7 +45,8 @@ behaviors:
     defaultAction:
       code: return_to_current_options
       title: Вернуться к актуальным вариантам
-      resolver: active_favorite_options
+      targetType: favorites
+      href: https://www.avito.ru/favorites
 
   - code: favorite_collector
     name: Коллекционер избранного
@@ -61,7 +63,8 @@ behaviors:
     defaultAction:
       code: open_active_favorites
       title: Открыть актуальное избранное
-      resolver: active_favorites
+      targetType: favorites
+      href: https://www.avito.ru/favorites
 
   - code: active_buyer
     name: Активный покупатель
@@ -78,7 +81,8 @@ behaviors:
     defaultAction:
       code: view_favorite_category_offers
       title: Посмотреть новые предложения в любимой категории
-      resolver: favorite_category_feed
+      targetType: search
+      href: https://www.avito.ru/rossiya?q={category}
 
   - code: new_arrivals_hunter
     name: Охотник за новинками
@@ -95,7 +99,8 @@ behaviors:
     defaultAction:
       code: enable_top_search_notifications
       title: Включить уведомления для главного поиска
-      resolver: top_search_without_notification
+      targetType: saved_searches
+      href: https://www.avito.ru/favorites/searches
 
   - code: careful_chooser
     name: Внимательный выбирающий
@@ -112,71 +117,13 @@ behaviors:
     defaultAction:
       code: continue_comparison
       title: Продолжить сравнение подходящих вариантов
-      resolver: comparison_candidates
-
-  - code: new_interests_lover
-    name: Любитель новых интересов
-    description: Проявил активность в нескольких новых категориях
-    sortOrder: 70
-    rule:
-      all:
-        - metric: interests.new_significant_categories
-          operator: gte
-          value: 2
-    defaultAction:
-      code: open_new_interest_collection
-      title: Посмотреть подборку по новому интересу
-      resolver: new_interest_feed
-
-  - code: regular_user
-    name: Постоянный пользователь
-    description: Активен в большинстве месяцев года
-    sortOrder: 80
-    rule:
-      all:
-        - metric: activity.active_months
-          operator: gte
-          value: 10
-    defaultAction:
-      code: continue_last_scenario
-      title: Продолжить последний актуальный сценарий
-      resolver: last_active_scenario
-
-  - code: seasonal_user
-    name: Сезонный пользователь
-    description: Основная активность приходится на определённый период
-    sortOrder: 90
-    rule:
-      all:
-        - metric: activity.peak_quarter_share
-          operator: gte
-          value: 0.6
-        - metric: activity.active_months
-          operator: gte
-          value: 2
-    defaultAction:
-      code: return_to_seasonal_collection
-      title: Вернуться к сезонной подборке
-      resolver: seasonal_feed
-
-  - code: returning_user
-    name: Возвращающийся пользователь
-    description: Возобновил активность после длительного перерыва
-    sortOrder: 100
-    rule:
-      all:
-        - metric: activity.returned_after_long_gap
-          operator: eq
-          value: true
-    defaultAction:
-      code: continue_last_search
-      title: Продолжить последний поиск
-      resolver: last_search
+      targetType: favorites
+      href: https://www.avito.ru/favorites
 
   - code: novice_seller
     name: Начинающий продавец
     description: Создал первые объявления, но имеет мало завершённых продаж
-    sortOrder: 110
+    sortOrder: 70
     rule:
       all:
         - metric: marketplace.published_listings
@@ -188,12 +135,13 @@ behaviors:
     defaultAction:
       code: improve_or_publish_listing
       title: Улучшить или опубликовать объявление
-      resolver: improvable_or_draft_listing
+      targetType: listings
+      href: https://www.avito.ru/profile/items/inactive
 
   - code: active_seller
     name: Активный продавец
     description: Регулярно публикует объявления и получает контакты
-    sortOrder: 120
+    sortOrder: 80
     rule:
       all:
         - metric: marketplace.published_listings
@@ -205,12 +153,13 @@ behaviors:
     defaultAction:
       code: publish_new_listing
       title: Разместить новое объявление
-      resolver: new_listing_form
+      targetType: listing_form
+      href: https://www.avito.ru/additem
 
   - code: effective_seller
     name: Эффективный продавец
     description: Высокая доля объявлений завершается продажей
-    sortOrder: 130
+    sortOrder: 90
     rule:
       all:
         - metric: marketplace.sale_completion_rate
@@ -222,12 +171,13 @@ behaviors:
     defaultAction:
       code: open_seller_statistics
       title: Посмотреть статистику и продать ещё
-      resolver: seller_statistics
+      targetType: seller_statistics
+      href: https://www.avito.ru/business/tools/analytics
 
   - code: delivery_user
     name: Пользователь доставки
     description: Значительная часть сделок проходит с доставкой
-    sortOrder: 140
+    sortOrder: 100
     rule:
       all:
         - metric: marketplace.delivery_share
@@ -239,12 +189,13 @@ behaviors:
     defaultAction:
       code: enable_delivery_on_listings
       title: Подключить доставку к активным объявлениям
-      resolver: active_listings_without_delivery
+      targetType: listings
+      href: https://www.avito.ru/profile/items/active
 
   - code: community_member
     name: Участник сообщества
     description: Регулярно оставляет отзывы и получает оценки
-    sortOrder: 150
+    sortOrder: 110
     rule:
       all:
         - metric: community.reviews_left
@@ -256,49 +207,13 @@ behaviors:
     defaultAction:
       code: leave_latest_deal_review
       title: Оставить отзыв по последней сделке
-      resolver: completed_deal_without_review
-
-  - code: universal_user
-    name: Универсальный пользователь
-    description: Активен и как покупатель, и как продавец
-    sortOrder: 160
-    rule:
-      all:
-        - metric: marketplace.purchases
-          operator: gte
-          value: 1
-        - metric: marketplace.sales
-          operator: gte
-          value: 1
-    defaultAction:
-      code: continue_relevant_scenario
-      title: Продолжить наиболее актуальный сценарий
-      resolver: most_relevant_scenario
-
-  - code: observer
-    name: Наблюдатель
-    description: Много просмотров, почти нет избранного и контактов
-    sortOrder: 170
-    rule:
-      all:
-        - metric: activity.views
-          operator: gte
-          value: 50
-        - metric: intent.favorites_added
-          operator: lte
-          value: 1
-        - metric: intent.contacted_unique_listings
-          operator: lte
-          value: 1
-    defaultAction:
-      code: add_viewed_listing_to_favorites
-      title: Добавить интересующее объявление в избранное
-      resolver: viewed_unfavorited_listing
+      targetType: reviews
+      href: https://www.avito.ru/profile/reviews
 
   - code: unfinished_intent
     name: Пользователь с незавершённым намерением
     description: Повторяет поисковые запросы или добавляет объявления в избранное, но не связывается с продавцами
-    sortOrder: 180
+    sortOrder: 120
     rule:
       all:
         - any:
@@ -314,12 +229,13 @@ behaviors:
     defaultAction:
       code: return_to_matching_listings
       title: Вернуться к подходящим объявлениям
-      resolver: unfinished_intent_candidates
+      targetType: favorites
+      href: https://www.avito.ru/favorites
 
   - code: rare_user
     name: Редкий пользователь
     description: Небольшое количество действий за год
-    sortOrder: 190
+    sortOrder: 130
     rule:
       all:
         - metric: activity.total_actions
@@ -331,4 +247,5 @@ behaviors:
     defaultAction:
       code: open_personal_collection
       title: Посмотреть персональную подборку
-      resolver: personal_feed
+      targetType: search
+      href: https://www.avito.ru/rossiya
