@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./behavior-catalog.schema.json
 
-version: v4
+version: v6
 
 behaviors:
   - code: explorer
@@ -247,5 +247,21 @@ behaviors:
     defaultAction:
       code: open_personal_collection
       title: Посмотреть персональную подборку
+      targetType: search
+      href: https://www.avito.ru/rossiya
+
+  # average user activity so avg user will not get not enought activity 422 response
+  - code: casual_activity
+    name: Активность за период
+    description: Заметная активность за год, но пока без выраженного сценария
+    sortOrder: 140
+    rule:
+      all:
+        - metric: activity.total_actions
+          operator: gte
+          value: 1
+    defaultAction:
+      code: open_general_catalog
+      title: Посмотреть все объявления
       targetType: search
       href: https://www.avito.ru/rossiya

@@ -50,11 +50,10 @@ func main() {
 	profiles := gen.DefaultUserConfig()
 	users := gen.GenerateUserData(seed, userCount, categories)
 	sellers := gen.SelectSellerUsers(seed, users)
-	listings := gen.GenerateListingData(seed, listingCount, categories, sellers, time.Now().UTC().AddDate(0, 0, 30))
+	listings := gen.GenerateListingData(seed, listingCount, categories, sellers, time.Now().UTC())
 	editEvents := gen.GenerateListingEditEvents(seed+100, listings)
 	activityEvents, deals, reviews := gen.GenerateUserEvents(seed, users, profiles, listings, categories)
-	
-	// Combine all activity events
+
 	allActivityEvents := append(activityEvents, editEvents...)
 
 	if err := gen.InsertCategories(ctx, pool, categoryRecords); err != nil {
@@ -78,14 +77,31 @@ func main() {
 
 	fmt.Printf("Inserted %d users (%d sellers), %d listings, %d activity events, %d deals, %d reviews\n",
 		len(users), len(sellers), len(listings), len(allActivityEvents), len(deals), len(reviews))
-	
-	// Print info about the first 3 users with default configs
+
+	// year coverage: how many events land in each calendar year, and for
+	// how many distinct users. recap request for year Y will 422 with
+	// "insufficient activity" for any user with zero events in that row.
+	fmt.Println("\n=== Event Coverage By Year ===")
+	eventsByYear := make(map[int]int)
+	usersByYear := make(map[int]map[string]struct{})
+	for _, event := range allActivityEvents {
+		year := event.OccurredAt.Year()
+		eventsByYear[year]++
+		if usersByYear[year] == nil {
+			usersByYear[year] = make(map[string]struct{})
+		}
+		usersByYear[year][event.UserID.String()] = struct{}{}
+	}
+	for year := time.Now().UTC().Year() - 3; year <= time.Now().UTC().Year(); year++ {
+		fmt.Printf("  %d: %d events across %d/%d users\n", year, eventsByYear[year], len(usersByYear[year]), len(users))
+	}
+
+	// print info about the first 3 users with default configs
 	fmt.Println("\n=== First 3 Users (Default Configs) ===")
 	for i := 0; i < 3 && i < len(users); i++ {
 		user := users[i]
 		profile := profiles[i]
-		
-		// Count events for this user
+
 		eventCounts := make(map[string]int)
 		intentCount := 0
 		for _, event := range allActivityEvents {
@@ -97,8 +113,7 @@ func main() {
 				}
 			}
 		}
-		
-		// Count deals for this user
+
 		userDeals := 0
 		userReviews := 0
 		for _, deal := range deals {
@@ -111,7 +126,7 @@ func main() {
 				userReviews++
 			}
 		}
-		
+
 		fmt.Printf("\nUser %d:\n", i+1)
 		fmt.Printf("  ID: %s\n", user.ID)
 		fmt.Printf("  Username: %s\n", user.DisplayName)
