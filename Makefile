@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-.PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down db-setup seed-data
-=======
-.PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down catalog-import
->>>>>>> origin/feat/contracts
+.PHONY: install generate generate-go generate-web generate-check format lint lint-go lint-web test test-go test-web build build-go build-web check compose-up compose-down migrate-up migrate-down db-setup seed-data catalog-import
+
 
 install:
 	pnpm install --frozen-lockfile

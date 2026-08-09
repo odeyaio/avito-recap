@@ -15,6 +15,26 @@ type EventSource string
 
 type DealStatus string
 
+const (
+	EventTypeView       = "view"
+	EventTypeSearch     = "search"
+	EventTypeFavorite   = "favorite"
+	EventTypeContact    = "contact"
+	EventTypeDelete     = "delete"
+	EventTypeBoost      = "boost"
+	EventTypeAnother    = "another"
+	EventTypeEdit       = "edit"
+	EventTypeShare      = "share"
+	EventTypeCancelDeal = "cancel_deal"
+)
+
+const (
+	EventSourceNotification = "notification"
+	EventSourcePush        = "push"
+	EventSourceEmail       = "email"
+	EventSourceDirect      = "direct"
+)
+
 type User struct {
 	ID            uuid.UUID
 	DisplayName   string

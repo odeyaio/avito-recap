@@ -1,4 +1,4 @@
-package generator
+package main
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"avito-recap/internal/model"
 )
 
-func ConnectToDatabase(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
+func connectToDatabase(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("parse database config: %w", err)
@@ -28,7 +28,7 @@ func ConnectToDatabase(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func InsertUsers(ctx context.Context, pool *pgxpool.Pool, users []model.User) error {
+func insertUsers(ctx context.Context, pool *pgxpool.Pool, users []model.User) error {
 	if len(users) == 0 {
 		return nil
 	}
@@ -46,7 +46,7 @@ func InsertUsers(ctx context.Context, pool *pgxpool.Pool, users []model.User) er
 	return nil
 }
 
-func InsertListings(ctx context.Context, pool *pgxpool.Pool, listings []model.Listing) error {
+func insertListings(ctx context.Context, pool *pgxpool.Pool, listings []model.Listing) error {
 	if len(listings) == 0 {
 		return nil
 	}
@@ -64,7 +64,7 @@ func InsertListings(ctx context.Context, pool *pgxpool.Pool, listings []model.Li
 	return nil
 }
 
-func InsertActivityEvents(ctx context.Context, pool *pgxpool.Pool, events []model.ActivityEvent) error {
+func insertActivityEvents(ctx context.Context, pool *pgxpool.Pool, events []model.ActivityEvent) error {
 	if len(events) == 0 {
 		return nil
 	}
@@ -82,7 +82,7 @@ func InsertActivityEvents(ctx context.Context, pool *pgxpool.Pool, events []mode
 	return nil
 }
 
-func InsertDeals(ctx context.Context, pool *pgxpool.Pool, deals []model.Deal) error {
+func insertDeals(ctx context.Context, pool *pgxpool.Pool, deals []model.Deal) error {
 	if len(deals) == 0 {
 		return nil
 	}
@@ -100,7 +100,7 @@ func InsertDeals(ctx context.Context, pool *pgxpool.Pool, deals []model.Deal) er
 	return nil
 }
 
-func InsertReviews(ctx context.Context, pool *pgxpool.Pool, reviews []model.Review) error {
+func insertReviews(ctx context.Context, pool *pgxpool.Pool, reviews []model.Review) error {
 	if len(reviews) == 0 {
 		return nil
 	}
@@ -118,6 +118,6 @@ func InsertReviews(ctx context.Context, pool *pgxpool.Pool, reviews []model.Revi
 	return nil
 }
 
-func InsertUserEvents(ctx context.Context, pool *pgxpool.Pool, events []model.ActivityEvent) error {
-	return InsertActivityEvents(ctx, pool, events)
+func insertUserEvents(ctx context.Context, pool *pgxpool.Pool, events []model.ActivityEvent) error {
+	return insertActivityEvents(ctx, pool, events)
 }

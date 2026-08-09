@@ -5,7 +5,53 @@ import (
 	"time"
 
 	"avito-recap/internal/model"
+
+	"github.com/google/uuid"
 )
+
+// ListingWithGenData wraps model.Listing with generation-only fields
+type ListingWithGenData struct {
+	model.Listing
+	Category string
+	Price    float64
+}
+
+// UserWithGenData wraps model.User with generation-only fields
+type UserWithGenData struct {
+	model.User
+	search                  float64
+	view                    float64
+	favorite                float64
+	contact                 float64
+	deal                    float64
+	review                  float64
+	notificationOpen        float64
+	PreferredCategories    []string
+	UnlikelyCategories     []string
+	PriceSegment           string
+	SellFrequency          float64
+	PreferredSellCategories []string
+	UnlikelySellCategories []string
+}
+
+// GetConfig returns the user configuration as UserConfig
+func (u UserWithGenData) GetConfig() UserConfig {
+	return UserConfig{
+		Search:                  u.search,
+		View:                    u.view,
+		Favorite:                u.favorite,
+		Contact:                 u.contact,
+		Deal:                    u.deal,
+		Review:                  u.review,
+		NotificationOpen:        u.notificationOpen,
+		SellFrequency:           u.SellFrequency,
+		PriceSegment:            u.PriceSegment,
+		PreferredCategories:     u.PreferredCategories,
+		UnlikelyCategories:      u.UnlikelyCategories,
+		PreferredSellCategories: u.PreferredSellCategories,
+		UnlikelySellCategories:  u.UnlikelySellCategories,
+	}
+}
 
 func randomDateBetweenYearsAgo(rnd *rand.Rand, yearsAgoUpper, yearsAgoLower int) time.Time {
 	now := time.Now().UTC()
@@ -62,14 +108,14 @@ func buildCategoryPreferences(rnd *rand.Rand, categories []CategoryConfig) ([]st
 
 	for i := 0; i < 2 && i < len(categories); i++ {
 		category := categories[rnd.Intn(len(categories))]
-		if !containsString(preferred, category.Name) {
+		if !containsStringSlice(preferred, category.Name) {
 			preferred = append(preferred, category.Name)
 		}
 	}
 
 	for i := 0; i < 2 && i < len(categories); i++ {
 		category := categories[rnd.Intn(len(categories))]
-		if !containsString(unlikely, category.Name) && !containsString(preferred, category.Name) {
+		if !containsStringSlice(unlikely, category.Name) && !containsStringSlice(preferred, category.Name) {
 			unlikely = append(unlikely, category.Name)
 		}
 	}
@@ -77,19 +123,12 @@ func buildCategoryPreferences(rnd *rand.Rand, categories []CategoryConfig) ([]st
 	return preferred, unlikely
 }
 
-func selectIntentCategory(user model.User, categories []CategoryConfig) string {
-	if len(categories) == 0 {
-		return ""
-	}
-	for _, preferred := range user.PreferredCategories {
-		if len(preferred) > 0 {
-			return preferred
-		}
-	}
-	return categories[0].Name
+func selectIntentCategory(user UserConfig, categories []CategoryConfig) string {
+	// Deprecated: use selectIntentCategoryForIndex instead
+	return selectIntentCategoryForIndex(user, categories, 0)
 }
 
-func estimateIntentPrice(user model.User, category string) float64 {
+func estimateIntentPrice(user UserConfig, category string, categories []CategoryConfig) float64 {
 	switch user.PriceSegment {
 	case "budget":
 		return 15000
@@ -100,13 +139,20 @@ func estimateIntentPrice(user model.User, category string) float64 {
 	}
 }
 
-func filterListingsForIntent(listings []model.Listing, user model.User, category string, maxPrice float64, cfg UserConfig) []model.Listing {
-	filtered := make([]model.Listing, 0)
+func filterListingsForIntent(listings []ListingWithGenData, user UserWithGenData, category string, maxPrice float64, cfg UserConfig) []ListingWithGenData {
+	filtered := make([]ListingWithGenData, 0)
 	for _, listing := range listings {
+		if listing.SellerID == user.ID {
+			continue
+		}
 		if listing.Category != category {
 			continue
 		}
 		if listing.Price > maxPrice {
+			continue
+		}
+		// Filter out unlikely categories
+		if containsStringSlice(user.UnlikelyCategories, listing.Category) {
 			continue
 		}
 		filtered = append(filtered, listing)
@@ -117,9 +163,9 @@ func filterListingsForIntent(listings []model.Listing, user model.User, category
 	return filtered
 }
 
-func listingRelevance(listing model.Listing, user model.User, category string, maxPrice float64, cfg UserConfig) float64 {
+func listingRelevance(listing ListingWithGenData, user UserWithGenData, category uuid.UUID, maxPrice float64, cfg UserConfig) float64 {
 	score := 0.25
-	if listing.Category == category {
+	if listing.CategoryID == category {
 		score += 0.35
 	}
 	if listing.Price <= maxPrice {
@@ -128,10 +174,10 @@ func listingRelevance(listing model.Listing, user model.User, category string, m
 	if listing.DeliveryAvailable {
 		score += 0.1
 	}
-	if containsString(user.PreferredCategories, listing.Category) {
+	if containsStringSlice(user.PreferredCategories, listing.Category) {
 		score += 0.15
 	}
-	if containsString(user.UnlikelyCategories, listing.Category) {
+	if containsStringSlice(user.UnlikelyCategories, listing.Category) {
 		score -= 0.1
 	}
 	if score > 1 {
@@ -143,27 +189,22 @@ func listingRelevance(listing model.Listing, user model.User, category string, m
 	return score
 }
 
-func selectTopCandidates(rnd *rand.Rand, listings []model.Listing, user model.User, cfg UserConfig) []model.Listing {
+func selectTopCandidates(rnd *rand.Rand, listings []ListingWithGenData, user UserWithGenData, cfg UserConfig) []ListingWithGenData {
 	if len(listings) == 0 {
 		return nil
 	}
 	count := 3
-	if cfg.Pattern == "high-intent" {
-		count = 5
-	} else if cfg.Pattern == "intentional" {
-		count = 4
-	}
 	if count > len(listings) {
 		count = len(listings)
 	}
 	return listings[:count]
 }
 
-func narrowPool(current []model.Listing, selected []model.Listing, user model.User, category string) []model.Listing {
+func narrowPool(current []ListingWithGenData, selected []ListingWithGenData, user UserWithGenData, category string) []ListingWithGenData {
 	if len(current) <= 1 {
 		return nil
 	}
-	filtered := make([]model.Listing, 0, len(current))
+	filtered := make([]ListingWithGenData, 0, len(current))
 	for _, listing := range current {
 		if containsListing(selected, listing) {
 			continue
@@ -176,7 +217,7 @@ func narrowPool(current []model.Listing, selected []model.Listing, user model.Us
 	return filtered
 }
 
-func containsListing(listings []model.Listing, target model.Listing) bool {
+func containsListing(listings []ListingWithGenData, target ListingWithGenData) bool {
 	for _, listing := range listings {
 		if listing.ID == target.ID {
 			return true
@@ -225,7 +266,16 @@ func SellerCountForListings(listingCount int) int {
 	return count
 }
 
-func containsString(values []string, target string) bool {
+func containsString(values []uuid.UUID, target uuid.UUID) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
+}
+
+func containsStringSlice(values []string, target string) bool {
 	for _, value := range values {
 		if value == target {
 			return true
@@ -243,4 +293,12 @@ func randomDateBetweenRange(start, end time.Time, rnd *rand.Rand) time.Time {
 		return start
 	}
 	return start.Add(time.Duration(rnd.Int63n(int64(diff))))
+}
+
+func randomTimeOffset(base time.Time, maxSeconds int, rnd *rand.Rand) time.Time {
+	if maxSeconds <= 0 {
+		return base
+	}
+	offset := rnd.Intn(maxSeconds + 1)
+	return base.Add(time.Duration(offset) * time.Second)
 }

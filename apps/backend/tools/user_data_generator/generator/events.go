@@ -1,162 +1,357 @@
 package generator
 
 import (
+	"encoding/json"
 	"math/rand"
+	"time"
+
+	"github.com/google/uuid"
 
 	"avito-recap/internal/model"
 )
 
-func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, listings []model.Listing, categories []CategoryConfig) ([]model.Search, []model.View, []model.Favorite, []model.Contact, []model.Deal, []model.Review, []model.UserEvent) {
+func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, listings []model.Listing, categories []CategoryConfig) ([]model.ActivityEvent, []model.Deal, []model.Review) {
 	source := rand.NewSource(seed)
 	rnd := rand.New(source)
 
-	searches := make([]model.Search, 0)
-	views := make([]model.View, 0)
-	favorites := make([]model.Favorite, 0)
-	contacts := make([]model.Contact, 0)
+	events := make([]model.ActivityEvent, 0)
 	deals := make([]model.Deal, 0)
 	reviews := make([]model.Review, 0)
 
+	if len(users) == 0 || len(listings) == 0 {
+		return events, deals, reviews
+	}
+
+	categoryMap := make(map[string]uuid.UUID)
+	for _, cat := range categories {
+		categoryMap[cat.Name] = CategoryID(cat.Name)
+	}
+
+	usersWithGen := make([]UserWithGenData, len(users))
 	for idx, user := range users {
-		if len(listings) == 0 {
-			continue
+		var cfg UserConfig
+		var preferred, unlikely []string
+		var preferredSell, unlikelySell []string
+
+		if idx < len(config) {
+			cfg = config[idx]
+			preferred = cfg.PreferredCategories
+			unlikely = cfg.UnlikelyCategories
+			preferredSell = cfg.PreferredSellCategories
+			unlikelySell = cfg.UnlikelySellCategories
+		} else {
+			cfg = RandomUserConfig(rnd, categories)
+			preferred = cfg.PreferredCategories
+			unlikely = cfg.UnlikelyCategories
+			preferredSell = cfg.PreferredSellCategories
+			unlikelySell = cfg.UnlikelySellCategories
 		}
 
-		cfg := config[idx%len(config)]
-		baseTime := user.RegisterDate
-		lastTime := baseTime
-
-		intentCategory := selectIntentCategory(user, categories)
-		categoryBehavior := findCategoryConfig(categories, intentCategory)
-		intentPrice := estimateIntentPrice(user, intentCategory)
-		searchTopic := intentCategory
-		if intentCategory == "" {
-			intentCategory = "Электроника"
+		usersWithGen[idx] = UserWithGenData{
+			User:                    user,
+			search:                  cfg.Search,
+			view:                    cfg.View,
+			favorite:                cfg.Favorite,
+			contact:                 cfg.Contact,
+			deal:                    cfg.Deal,
+			review:                  cfg.Review,
+			notificationOpen:        cfg.NotificationOpen,
+			PreferredCategories:     preferred,
+			UnlikelyCategories:      unlikely,
+			PriceSegment:            cfg.PriceSegment,
+			SellFrequency:           cfg.SellFrequency,
+			PreferredSellCategories: preferredSell,
+			UnlikelySellCategories:  unlikelySell,
 		}
+	}
 
-		candidateListings := filterListingsForIntent(listings, user, intentCategory, intentPrice, cfg)
-		if len(candidateListings) == 0 {
-			candidateListings = listings
-		}
-
-		searches = append(searches, model.Search{ID: int64(len(searches) + 1), UserID: user.ID, SearchedAt: baseTime, Topic: searchTopic, Category: &intentCategory, Filters: map[string]any{"category": intentCategory, "max_price": intentPrice}, ResultCount: len(candidateListings)})
-
-		currentPool := candidateListings
-		for step := 0; step < 3; step++ {
-			if len(currentPool) == 0 {
+	// Convert listings to ListingWithGenData
+	listingsWithGen := make([]ListingWithGenData, len(listings))
+	for idx, listing := range listings {
+		categoryName := ""
+		for name, id := range categoryMap {
+			if id == listing.CategoryID {
+				categoryName = name
 				break
 			}
-			selected := selectTopCandidates(rnd, currentPool, user, cfg)
-			if len(selected) == 0 {
-				selected = currentPool[:min(3, len(currentPool))]
+		}
+		price := 50000.0
+		switch listing.PriceBand {
+		case "budget":
+			price = 15000.0
+		case "premium":
+			price = 200000.0
+		}
+		listingsWithGen[idx] = ListingWithGenData{
+			Listing:  listing,
+			Category: categoryName,
+			Price:    price,
+		}
+	}
+
+	generatorConfig := DefaultGeneratorConfig()
+	
+	soldListings := make(map[uuid.UUID]bool)
+	cancelledListingsPerUser := make(map[uuid.UUID]map[uuid.UUID]bool) // userID -> listingID -> cancelled
+	
+	for _, user := range usersWithGen {
+		if cancelledListingsPerUser[user.ID] == nil {
+			cancelledListingsPerUser[user.ID] = make(map[uuid.UUID]bool)
+		}
+		cfg := user.GetConfig()
+
+		baseTime := user.RegisteredAt
+		if baseTime.IsZero() {
+			baseTime = time.Now().UTC().Add(-time.Duration(generatorConfig.EventBaseTimeOffsetHours) * time.Hour)
+		}
+
+		// Generate multiple intents based on preferred categories and their purchase volume
+		intentCount := cfg.IntentCount
+		if intentCount <= 0 {
+			intentCount = calculateIntentCount(user.PreferredCategories, categories, generatorConfig, rnd)
+		}
+		
+		for intentIdx := 0; intentIdx < intentCount; intentIdx++ {
+			// Select category for this intent
+			categoryName := selectIntentCategoryForIndex(cfg, categories, intentIdx)
+			if categoryName == "" {
+				categoryName = generatorConfig.EventDefaultCategory
+				if len(categories) > 0 {
+					categoryName = categories[rnd.Intn(len(categories))].Name
+				}
 			}
 
-			for _, listing := range selected {
-				score := listingRelevance(listing, user, intentCategory, intentPrice, cfg)
-				if score < 0.2 {
+			intentBaseTime := randomDateAfter(baseTime, rnd, generatorConfig.IntentSpreadDays)
+
+			// Search event
+			properties, _ := json.Marshal(map[string]interface{}{
+				"topic":   categoryName,
+				"filters": map[string]interface{}{"category": categoryName},
+			})
+			events = append(events, model.ActivityEvent{
+				ID:         seededUUID(rnd),
+				UserID:     user.ID,
+				Type:       model.EventType(model.EventTypeSearch),
+				OccurredAt: intentBaseTime,
+				Properties: properties,
+				IngestedAt: time.Now().UTC(),
+			})
+
+			// Get initial candidates from search
+			maxPrice := estimateIntentPrice(cfg, categoryName, categories)
+			filtered := filterListingsForIntent(listingsWithGen, user, categoryName, maxPrice, cfg)
+			initialCandidates := selectSearchCandidates(rnd, filtered, user, cfg)
+			
+			// VIEW stage - filter through view probability
+			viewedListings := make([]ListingWithGenData, 0)
+			for _, listing := range initialCandidates {
+				if rnd.Float64() < clamp(cfg.View, 0, 1) {
+					viewedListings = append(viewedListings, listing)
+					
+					listingID := listing.ID
+					categoryID := listing.CategoryID
+					
+					// Determine if this view starts from a notification
+					var source *model.EventSource
+					if rnd.Float64() < clamp(cfg.NotificationOpen, 0, 1) {
+						notificationSource := model.EventSource(model.EventSourceNotification)
+						source = &notificationSource
+					}
+					
+					viewTime := randomTimeOffset(intentBaseTime, generatorConfig.EventRandomSpreadSeconds, rnd)
+					properties, _ := json.Marshal(map[string]interface{}{"price_band": listing.PriceBand})
+					events = append(events, model.ActivityEvent{
+						ID:         seededUUID(rnd),
+						UserID:     user.ID,
+						Type:       model.EventType(model.EventTypeView),
+						OccurredAt: viewTime,
+						ListingID:  &listingID,
+						CategoryID: &categoryID,
+						Source:     source,
+						Properties: properties,
+						IngestedAt: time.Now().UTC(),
+					})
+
+					// SHARE event - after view, independent probability
+					if rnd.Float64() < clamp(generatorConfig.ShareProbability, 0, 1) {
+						shareTime := randomTimeOffset(viewTime.Add(time.Duration(5)*time.Minute), generatorConfig.EventRandomSpreadSeconds, rnd)
+						shareProperties, _ := json.Marshal(map[string]interface{}{"price_band": listing.PriceBand})
+						events = append(events, model.ActivityEvent{
+							ID:         seededUUID(rnd),
+							UserID:     user.ID,
+							Type:       model.EventType(model.EventTypeShare),
+							OccurredAt: shareTime,
+							ListingID:  &listingID,
+							CategoryID: &categoryID,
+							Properties: shareProperties,
+							IngestedAt: time.Now().UTC(),
+						})
+					}
+				}
+			}
+
+			// FAVORITE stage - only from viewed listings
+			favoritedListings := make([]ListingWithGenData, 0)
+			for _, listing := range viewedListings {
+				if rnd.Float64() < clamp(cfg.Favorite, 0, 1) {
+					favoritedListings = append(favoritedListings, listing)
+					
+					listingID := listing.ID
+					categoryID := listing.CategoryID
+					favoriteTime := randomTimeOffset(intentBaseTime.Add(time.Duration(generatorConfig.EventFavoriteOffsetMinutes)*time.Minute), generatorConfig.EventRandomSpreadSeconds, rnd)
+					properties, _ := json.Marshal(map[string]interface{}{"price_band": listing.PriceBand})
+					events = append(events, model.ActivityEvent{
+						ID:         seededUUID(rnd),
+						UserID:     user.ID,
+						Type:       model.EventType(model.EventTypeFavorite),
+						OccurredAt: favoriteTime,
+						ListingID:  &listingID,
+						CategoryID: &categoryID,
+						Properties: properties,
+						IngestedAt: time.Now().UTC(),
+					})
+				}
+			}
+
+			// CONTACT stage - only from viewed listings
+			contactedListings := make([]ListingWithGenData, 0)
+			cancelledListings := make(map[uuid.UUID]bool)
+			for _, listing := range viewedListings {
+				if rnd.Float64() < clamp(cfg.Contact, 0, 1) {
+					listingID := listing.ID
+					categoryID := listing.CategoryID
+					contactTime := randomTimeOffset(intentBaseTime.Add(time.Duration(generatorConfig.EventContactOffsetMinutes)*time.Minute), generatorConfig.EventRandomSpreadSeconds, rnd)
+					properties, _ := json.Marshal(map[string]interface{}{"price_band": listing.PriceBand})
+					events = append(events, model.ActivityEvent{
+						ID:         seededUUID(rnd),
+						UserID:     user.ID,
+						Type:       model.EventType(model.EventTypeContact),
+						OccurredAt: contactTime,
+						ListingID:  &listingID,
+						CategoryID: &categoryID,
+						Properties: properties,
+						IngestedAt: time.Now().UTC(),
+					})
+
+					// CANCEL_DEAL event - after contact, before deal, doesn't lead to actual deal
+					if rnd.Float64() < clamp(generatorConfig.CancelDealProbability, 0, 1) {
+						cancelTime := randomTimeOffset(contactTime.Add(time.Duration(10)*time.Minute), generatorConfig.EventRandomSpreadSeconds, rnd)
+						events = append(events, model.ActivityEvent{
+							ID:         seededUUID(rnd),
+							UserID:     user.ID,
+							Type:       model.EventType(model.EventTypeCancelDeal),
+							OccurredAt: cancelTime,
+							ListingID:  &listingID,
+							CategoryID: &categoryID,
+							Properties: properties,
+							IngestedAt: time.Now().UTC(),
+						})
+						cancelledListings[listing.ID] = true
+						cancelledListingsPerUser[user.ID][listing.ID] = true
+					} else {
+						contactedListings = append(contactedListings, listing)
+					}
+				}
+			}
+
+			// DEAL stage - only from contacted listings (not cancelled) and not already sold
+			for _, listing := range contactedListings {
+				// Skip if listing is already cancelled by this user or already sold globally
+				if cancelledListingsPerUser[user.ID][listing.ID] || soldListings[listing.ID] {
 					continue
 				}
-
-				currentTime := randomDateAfter(lastTime, rnd, 2)
-				if listing.PublishedAt.After(currentTime) {
-					currentTime = listing.PublishedAt
-				}
-				if currentTime.After(lastTime) {
-					lastTime = currentTime
-				}
-
-				viewProbability := clamp(cfg.view*score*(0.75+categoryBehavior.ReturnRate*0.35), 0, 1)
-				favoriteProbability := clamp(cfg.favorite*score*(0.70+categoryBehavior.ReturnRate*0.40), 0, 1)
-				contactProbability := clamp(cfg.contact*score*(0.75+categoryBehavior.ReturnRate*0.25), 0, 1)
-
-				switch step {
-				case 0:
-					if rnd.Float64() < viewProbability {
-						views = append(views, model.View{ID: int64(len(views) + 1), UserID: user.ID, ListingID: listing.ID, Category: listing.Category, ViewedAt: currentTime, DurationSeconds: int(score*600) + 30, IsRepeat: rnd.Intn(100) < 20})
+				
+				if rnd.Float64() < clamp(cfg.Deal, 0, 1) {
+					dealTime := intentBaseTime.Add(time.Duration(generatorConfig.EventDealOffsetMinutes) * time.Minute)
+					deal := model.Deal{
+						ID:           uuid.New(),
+						ListingID:    listing.ID,
+						BuyerID:      user.ID,
+						CreatedAt:    dealTime,
+						CompletedAt:  nil,
+						Status:       "pending",
+						DeliveryUsed: listing.DeliveryAvailable,
+						PriceBand:    listing.PriceBand,
 					}
-				case 1:
-					if rnd.Float64() < favoriteProbability || (cfg.Pattern == "curious" && score > 0.7) {
-						favorites = append(favorites, model.Favorite{ID: int64(len(favorites) + 1), UserID: user.ID, ListingID: listing.ID, Category: listing.Category, Action: "add", OccurredAt: currentTime})
-					}
-				case 2:
-					if rnd.Float64() < contactProbability {
-						contacts = append(contacts, model.Contact{ID: int64(len(contacts) + 1), UserID: user.ID, ListingID: listing.ID, ContactType: []string{"chat", "call", "offer"}[rnd.Intn(3)], OccurredAt: currentTime})
+					deals = append(deals, deal)
+					soldListings[listing.ID] = true
 
-						dealProbability := clamp(cfg.deal*score*(0.75+categoryBehavior.PurchaseVolume*0.25), 0, 1)
-						if rnd.Float64() < dealProbability {
-							dealID := int64(len(deals) + 1)
-							status := "cancelled"
-							completedAt := currentTime
-							if rnd.Float64() < clamp(0.65+cfg.deal*0.25, 0, 1) {
-								status = "completed"
-								completedAt = randomDateAfter(currentTime, rnd, 14)
-							}
-
-							deal := model.Deal{
-								ID:          dealID,
-								BuyerID:     user.ID,
-								SellerID:    listing.SellerID,
-								ListingID:   listing.ID,
-								Category:    listing.Category,
-								Price:       listing.Price,
-								Delivery:    listing.DeliveryAvailable,
-								CreatedAt:   currentTime,
-								CompletedAt: completedAt,
-								Status:      status,
-							}
-							deals = append(deals, deal)
-
-							if status == "completed" && rnd.Float64() < clamp(cfg.review*0.8+0.2, 0, 1) {
-								reviewID := int64(len(reviews) + 1)
-								rating := int16(3 + rnd.Intn(3))
-								reviewCreatedAt := randomDateAfter(completedAt, rnd, 7)
-								reviews = append(reviews, model.Review{ID: reviewID, ReviewerID: user.ID, ReviewedUserID: listing.SellerID, DealID: &deal.ID, Rating: rating, CreatedAt: reviewCreatedAt})
-							}
+					// REVIEW stage - only for completed deals
+					if rnd.Float64() < clamp(cfg.Review, 0, 1) && user.ID != listing.SellerID {
+						reviewTime := dealTime.Add(time.Duration(generatorConfig.EventReviewOffsetHours) * time.Hour)
+						review := model.Review{
+							ID:          uuid.New(),
+							DealID:      &deal.ID,
+							AuthorID:    user.ID,
+							RecipientID: listing.SellerID,
+							Rating:      int16(3 + rnd.Intn(3)),
+							CreatedAt:   reviewTime,
 						}
+						reviews = append(reviews, review)
 					}
 				}
 			}
-
-			currentPool = narrowPool(currentPool, selected, user, intentCategory)
 		}
 	}
 
-	return searches, views, favorites, contacts, deals, reviews, buildUserEventsFromActions(searches, views, favorites, contacts, deals, reviews)
+	return events, deals, reviews
 }
 
-func buildUserEventsFromActions(searches []model.Search, views []model.View, favorites []model.Favorite, contacts []model.Contact, deals []model.Deal, reviews []model.Review) []model.UserEvent {
-	capacity := len(searches) + len(views) + len(favorites) + len(contacts) + len(deals)*2 + len(reviews)
-	events := make([]model.UserEvent, 0, capacity)
-	nextID := int64(1)
-
-	for _, search := range searches {
-		events = append(events, model.UserEvent{ID: nextID, UserID: search.UserID, EventType: "search", OccurredAt: search.SearchedAt})
-		nextID++
+// calculateIntentCount determines how many intents a user should have based on their preferred categories
+func calculateIntentCount(preferredCategories []string, categories []CategoryConfig, config GeneratorConfig, rnd *rand.Rand) int {
+	if len(preferredCategories) == 0 {
+		return config.IntentCountMin + rnd.Intn(2) 
 	}
-	for _, view := range views {
-		events = append(events, model.UserEvent{ID: nextID, UserID: view.UserID, EventType: "view", OccurredAt: view.ViewedAt})
-		nextID++
-	}
-	for _, favorite := range favorites {
-		events = append(events, model.UserEvent{ID: nextID, UserID: favorite.UserID, EventType: "favorite", OccurredAt: favorite.OccurredAt})
-		nextID++
-	}
-	for _, contact := range contacts {
-		events = append(events, model.UserEvent{ID: nextID, UserID: contact.UserID, EventType: "contact", OccurredAt: contact.OccurredAt})
-		nextID++
-	}
-	for _, deal := range deals {
-		events = append(events, model.UserEvent{ID: nextID, UserID: deal.BuyerID, EventType: "deal_created", OccurredAt: deal.CreatedAt})
-		nextID++
-		if deal.Status == "completed" {
-			events = append(events, model.UserEvent{ID: nextID, UserID: deal.BuyerID, EventType: "deal_closed", OccurredAt: deal.CompletedAt})
-			nextID++
+	
+	totalVolume := 0.0
+	for _, prefCat := range preferredCategories {
+		for _, cat := range categories {
+			if cat.Name == prefCat {
+				totalVolume += cat.PurchaseVolume
+				break
+			}
 		}
 	}
-	for _, review := range reviews {
-		events = append(events, model.UserEvent{ID: nextID, UserID: review.ReviewerID, EventType: "review", OccurredAt: review.CreatedAt})
-		nextID++
+	
+	intentCount := int(totalVolume * config.IntentCountMultiplier)
+	if intentCount < config.IntentCountMin {
+		intentCount = config.IntentCountMin
 	}
+	if intentCount > config.IntentCountMax {
+		intentCount = config.IntentCountMax
+	}
+	
+	return intentCount
+}
 
-	return events
+func selectIntentCategoryForIndex(cfg UserConfig, categories []CategoryConfig, intentIndex int) string {
+	if len(cfg.PreferredCategories) == 0 {
+		if len(categories) > 0 {
+			return categories[intentIndex%len(categories)].Name
+		}
+		return ""
+	}
+	
+	return cfg.PreferredCategories[intentIndex%len(cfg.PreferredCategories)]
+}
+
+func selectSearchCandidates(rnd *rand.Rand, listings []ListingWithGenData, user UserWithGenData, cfg UserConfig) []ListingWithGenData {
+	if len(listings) == 0 {
+		return nil
+	}
+	
+	count := 10 
+	if count > len(listings) {
+		count = len(listings)
+	}
+	
+	shuffled := make([]ListingWithGenData, len(listings))
+	copy(shuffled, listings)
+	
+	for i := len(shuffled) - 1; i > 0; i-- {
+		j := rnd.Intn(i + 1)
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	}
+	
+	return shuffled[:count]
 }
