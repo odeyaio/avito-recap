@@ -30,11 +30,12 @@ behaviors:
     defaultAction:
       code: open_feed
       title: Open feed
-      resolver: personal_feed
+      targetType: search
+      href: https://www.avito.ru/rossiya
 `,
 		},
 		{
-			name: "invalid resolver",
+			name: "invalid target type",
 			input: `
 version: v1
 behaviors:
@@ -50,7 +51,8 @@ behaviors:
     defaultAction:
       code: open_feed
       title: Open feed
-      resolver: Invalid Resolver
+      targetType: Invalid Target
+      href: https://www.avito.ru/rossiya
 `,
 			wantErr: true,
 		},
@@ -72,7 +74,8 @@ behaviors:
     defaultAction:
       code: open_feed
       title: Open feed
-      resolver: personal_feed
+      targetType: search
+      href: https://www.avito.ru/rossiya
   - <<: *behavior
     name: Second
     sortOrder: 20
@@ -96,7 +99,8 @@ behaviors:
     defaultAction:
       code: open_feed
       title: Open feed
-      resolver: personal_feed
+      targetType: search
+      href: https://www.avito.ru/rossiya
 `,
 			wantErr: true,
 		},

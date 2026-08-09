@@ -93,3 +93,43 @@ type RecapPresentation struct {
 	Content       json.RawMessage
 	GeneratedAt   time.Time
 }
+
+type ProfileSummary struct {
+	User           User
+	AvailableYears []int32
+	LatestRecapID  *uuid.UUID
+}
+
+type StoredBehavior struct {
+	Match      RecapBehaviorType
+	Definition BehaviorTypeDefinition
+}
+
+type StoredAchievement struct {
+	Match      RecapAchievement
+	Definition AchievementDefinition
+}
+
+type Recap struct {
+	Snapshot     RecapSnapshot
+	Profile      ProfileSummary
+	Behaviors    []StoredBehavior
+	Achievements []StoredAchievement
+	NextAction   *RecapNextAction
+	Presentation *RecapPresentation
+}
+
+type RecapDraft struct {
+	Snapshot     RecapSnapshot
+	Behaviors    []RecapBehaviorType
+	Achievements []RecapAchievement
+	NextAction   *RecapNextAction
+}
+
+type RecapIdentity struct {
+	UserID         uuid.UUID
+	PeriodStart    time.Time
+	PeriodEnd      time.Time
+	RulesetVersion string
+	DatasetVersion string
+}

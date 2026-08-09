@@ -65,7 +65,7 @@
     "defaultAction": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["code", "title", "resolver"],
+      "required": ["code", "title", "targetType", "href"],
       "properties": {
         "code": {
           "type": "string",
@@ -77,10 +77,15 @@
           "minLength": 1,
           "description": "Безопасная формулировка по умолчанию и инструкция для ИИ."
         },
-        "resolver": {
+        "targetType": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9_]*$",
-          "description": "Имя Go-стратегии, которая подбирает актуальную цель и строит href."
+          "description": "Тип цели для клиента."
+        },
+        "href": {
+          "type": "string",
+          "pattern": "^https://www\\.avito\\.ru/[^\\s]*$",
+          "description": "Публичный HTTPS URL Avito; может содержать поддерживаемые placeholders."
         }
       }
     },
