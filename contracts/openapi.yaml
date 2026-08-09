@@ -229,9 +229,6 @@ components:
       properties:
         year:
           type: integer
-          format: int32
-          minimum: 2020
-          maximum: 2100
           example: 2025
         locale:
           type: string
@@ -284,7 +281,6 @@ components:
       properties:
         year:
           type: integer
-          format: int32
         startsAt:
           type: string
           format: date
@@ -641,8 +637,9 @@ components:
           description: Персональная формулировка, созданная ИИ для готового действия
         href:
           type: string
-          description: Внутренняя ссылка или deep link, сформированный сервисом
-          example: /search?category=electronics&delivery=true
+          format: uri
+          description: Публичная HTTPS-ссылка на соответствующий раздел Avito
+          example: https://www.avito.ru/favorites
         target:
           $ref: "#/components/schemas/ActionTarget"
 

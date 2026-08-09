@@ -2,10 +2,14 @@ package http
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
 	"avito-recap/internal/adapter/in/http/generated"
+	"avito-recap/internal/engine"
+	"avito-recap/internal/repository"
+	"avito-recap/internal/service"
 )
 
 const healthcheckTimeout = time.Second
@@ -16,59 +20,100 @@ type databasePinger interface {
 
 type Handler struct {
 	database databasePinger
+	profiles profileService
+	recaps   recapService
 }
 
 var _ generated.StrictServerInterface = (*Handler)(nil)
 
-func NewHandler(database databasePinger) *Handler {
-	return &Handler{database: database}
+func NewHandler(database databasePinger, profiles profileService, recaps recapService) *Handler {
+	return &Handler{database: database, profiles: profiles, recaps: recaps}
 }
 
-func RegisterHandlers(router generated.EchoRouter, database databasePinger) {
-	handler := NewHandler(database)
+func RegisterHandlers(
+	router generated.EchoRouter,
+	database databasePinger,
+	profiles profileService,
+	recaps recapService,
+) {
+	handler := NewHandler(database, profiles, recaps)
 	strictHandler := generated.NewStrictHandler(handler, nil)
 	generated.RegisterHandlers(router, strictHandler)
 }
 
 func (h *Handler) ListProfiles(
-	_ context.Context,
+	ctx context.Context,
 	_ generated.ListProfilesRequestObject,
 ) (generated.ListProfilesResponseObject, error) {
-	return generated.ListProfiles200JSONResponse{
-		Items: []generated.ProfileSummary{},
-	}, nil
+	profiles, err := h.profiles.ListProfiles(ctx)
+	if err != nil {
+		problem := internalProblem()
+		//nolint:nilerr // The service error is deliberately translated into a typed HTTP response.
+		return generated.ListProfiles500ApplicationProblemPlusJSONResponse{
+			InternalErrorApplicationProblemPlusJSONResponse: generated.InternalErrorApplicationProblemPlusJSONResponse(problem),
+		}, nil
+	}
+
+	items := make([]generated.ProfileSummary, 0, len(profiles))
+	for _, profile := range profiles {
+		items = append(items, profileResponse(profile))
+	}
+	return generated.ListProfiles200JSONResponse{Items: items}, nil
 }
 
 func (h *Handler) GenerateRecap(
-	_ context.Context,
-	_ generated.GenerateRecapRequestObject,
+	ctx context.Context,
+	request generated.GenerateRecapRequestObject,
 ) (generated.GenerateRecapResponseObject, error) {
-	problem := newProblem(
-		http.StatusServiceUnavailable,
-		"generation_unavailable",
-		"Генерация recap пока недоступна",
-		"Обработчик генерации ещё не подключён к use case.",
-	)
+	if request.Body == nil {
+		problem := newProblem(http.StatusBadRequest, "bad_request", "Некорректный запрос", "Тело запроса обязательно.")
+		return generated.GenerateRecap400ApplicationProblemPlusJSONResponse{
+			BadRequestApplicationProblemPlusJSONResponse: generated.BadRequestApplicationProblemPlusJSONResponse(problem),
+		}, nil
+	}
 
-	return generated.GenerateRecap503ApplicationProblemPlusJSONResponse{
-		GenerationUnavailableApplicationProblemPlusJSONResponse: generated.GenerationUnavailableApplicationProblemPlusJSONResponse(problem),
-	}, nil
+	recap, err := h.recaps.GenerateRecap(ctx, request.ProfileID, request.Body.Year)
+	if err != nil {
+		return generateRecapError(err), nil
+	}
+	response, err := recapResponse(recap)
+	if err != nil {
+		problem := internalProblem()
+		//nolint:nilerr // The mapping error is deliberately translated into a typed HTTP response.
+		return generated.GenerateRecap500ApplicationProblemPlusJSONResponse{
+			InternalErrorApplicationProblemPlusJSONResponse: generated.InternalErrorApplicationProblemPlusJSONResponse(problem),
+		}, nil
+	}
+	return generated.GenerateRecap200JSONResponse(response), nil
 }
 
 func (h *Handler) GetRecap(
-	_ context.Context,
-	_ generated.GetRecapRequestObject,
+	ctx context.Context,
+	request generated.GetRecapRequestObject,
 ) (generated.GetRecapResponseObject, error) {
-	problem := newProblem(
-		http.StatusNotFound,
-		"recap_not_found",
-		"Recap не найден",
-		"Хранилище recap ещё не подключено.",
-	)
-
-	return generated.GetRecap404ApplicationProblemPlusJSONResponse{
-		RecapNotFoundApplicationProblemPlusJSONResponse: generated.RecapNotFoundApplicationProblemPlusJSONResponse(problem),
-	}, nil
+	recap, err := h.recaps.GetRecap(ctx, request.RecapID)
+	if errors.Is(err, repository.ErrRecapNotFound) {
+		problem := newProblem(http.StatusNotFound, "recap_not_found", "Recap не найден", "Запрошенный recap не существует.")
+		return generated.GetRecap404ApplicationProblemPlusJSONResponse{
+			RecapNotFoundApplicationProblemPlusJSONResponse: generated.RecapNotFoundApplicationProblemPlusJSONResponse(problem),
+		}, nil
+	}
+	if err != nil {
+		problem := internalProblem()
+		//nolint:nilerr // The service error is deliberately translated into a typed HTTP response.
+		return generated.GetRecap500ApplicationProblemPlusJSONResponse{
+			InternalErrorApplicationProblemPlusJSONResponse: generated.InternalErrorApplicationProblemPlusJSONResponse(problem),
+		}, nil
+	}
+	response, err := recapResponse(recap)
+	if err != nil {
+		problem := internalProblem()
+		//nolint:nilerr // The mapping error is deliberately translated into a typed HTTP response.
+		return generated.GetRecap500ApplicationProblemPlusJSONResponse{
+			InternalErrorApplicationProblemPlusJSONResponse: generated.InternalErrorApplicationProblemPlusJSONResponse(problem),
+		}, nil
+	}
+	return generated.GetRecap200JSONResponse(response), nil
 }
 
 func (h *Handler) CheckHealth(
@@ -101,5 +146,49 @@ func newProblem(status int32, code, title, detail string) generated.Problem {
 		Status: status,
 		Code:   code,
 		Detail: &detail,
+	}
+}
+
+func internalProblem() generated.Problem {
+	return newProblem(
+		http.StatusInternalServerError,
+		"internal_error",
+		"Внутренняя ошибка сервиса",
+		"Не удалось обработать запрос.",
+	)
+}
+
+func generateRecapError(err error) generated.GenerateRecapResponseObject {
+	switch {
+	case errors.Is(err, repository.ErrProfileNotFound):
+		problem := newProblem(http.StatusNotFound, "profile_not_found", "Профиль не найден", "Тестовый профиль не существует.")
+		return generated.GenerateRecap404ApplicationProblemPlusJSONResponse{
+			ProfileNotFoundApplicationProblemPlusJSONResponse: generated.ProfileNotFoundApplicationProblemPlusJSONResponse(problem),
+		}
+	case errors.Is(err, engine.ErrNoActivity), errors.Is(err, service.ErrBehaviorNotMatched):
+		problem := newProblem(
+			http.StatusUnprocessableEntity,
+			"insufficient_activity",
+			"Недостаточно активности",
+			"Для выбранного года недостаточно данных для содержательного recap.",
+		)
+		return generated.GenerateRecap422ApplicationProblemPlusJSONResponse{
+			InsufficientActivityApplicationProblemPlusJSONResponse: generated.InsufficientActivityApplicationProblemPlusJSONResponse(problem),
+		}
+	case errors.Is(err, repository.ErrCatalogUnavailable):
+		problem := newProblem(
+			http.StatusServiceUnavailable,
+			"generation_unavailable",
+			"Генерация временно недоступна",
+			"Каталог правил ещё не загружен.",
+		)
+		return generated.GenerateRecap503ApplicationProblemPlusJSONResponse{
+			GenerationUnavailableApplicationProblemPlusJSONResponse: generated.GenerationUnavailableApplicationProblemPlusJSONResponse(problem),
+		}
+	default:
+		problem := internalProblem()
+		return generated.GenerateRecap500ApplicationProblemPlusJSONResponse{
+			InternalErrorApplicationProblemPlusJSONResponse: generated.InternalErrorApplicationProblemPlusJSONResponse(problem),
+		}
 	}
 }
