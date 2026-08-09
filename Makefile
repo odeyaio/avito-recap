@@ -68,6 +68,5 @@ seed-data:
 	docker compose run --rm generator -dsn postgres://avito-recap:avito-recap@postgres:5432/avito-recap?sslmode=disable -users 100 -listings 1000
 
 catalog-import:
-	go -C apps/backend run ./cmd/catalog-import \
-		-achievements-file ../../catalog/achievements.yaml \
-		-behaviors-file ../../catalog/behaviors.yaml
+	docker compose build catalog-import
+	docker compose run --rm catalog-import
