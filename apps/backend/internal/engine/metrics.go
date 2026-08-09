@@ -155,10 +155,6 @@ func (e *Engine) calculateActivity(
 		months[local.Format("2006-01")]++
 		hours[local.Hour()]++
 		quarters[(int(local.Month())-1)/3]++
-		// Points are already scoped to dataset.Period (built from
-		// userEvents/listings/deals/reviews that pass Period.Contains), and
-		// PeriodForYear spans exactly one calendar year, so local.Month() is
-		// always within the recap's own year here.
 		result.MonthlyActivity[int(local.Month())-1]++
 	}
 
@@ -277,8 +273,7 @@ func (e *Engine) calculateInterests(
 
 	// price_band preference: which of the listings the user interacted with
 	// (views/favorites/contacts/etc, via the same points list activity uses)
-	// skew budget/mid/premium. Not wired into the API response yet — no
-	// dedicated field in generated.InterestMetrics — but usable today by
+	// skew budget/mid/premium. not wired into the API response yet, but usable by
 	// catalog behavior/achievement rules via interests.preferred_price_band
 	// and interests.premium_interactions_share.
 	bandCounts := make(map[string]int64)
@@ -307,11 +302,6 @@ func (e *Engine) calculateInterests(
 	}
 	metrics.Set("interests.premium_interactions_share", ratio(bandCounts["premium"], totalBandInteractions))
 
-	// Category identity: which category is "top"/"new" was previously
-	// discarded (only the scalar counts above survived) — mapper.go had
-	// nothing to put in recap.metrics.interests.topCategories/newCategories,
-	// so those API fields were hardcoded to []. Resolve id -> code/name via
-	// dataset.Categories and keep the full per-category breakdown here.
 	categoriesByID := make(map[uuid.UUID]model.Category, len(dataset.Categories))
 	for _, category := range dataset.Categories {
 		categoriesByID[category.ID] = category
@@ -333,9 +323,6 @@ func (e *Engine) calculateInterests(
 			Share:        ratio(actions, totalCategoryActions),
 		})
 	}
-	// Deterministic ordering: map iteration order is randomized, and this
-	// feeds a persisted, idempotent recap snapshot, so ties must break the
-	// same way every time (by category code).
 	sortCategoryStats := func(items []CategoryStat) {
 		slices.SortFunc(items, func(left, right CategoryStat) int {
 			if left.Actions != right.Actions {
@@ -440,11 +427,6 @@ func (e *Engine) calculateIntent(
 		case "contact":
 			contactTimes[*event.ListingID] = append(contactTimes[*event.ListingID], event.OccurredAt)
 		case "deal_cancelled":
-			// The generator only emits deal_cancelled after a contact event
-			// for the same listing (business-logic invariant, checked by
-			// TestBusinessLogic in the generator), so counting the event
-			// itself is enough — no need to re-verify ordering against
-			// contactTimes here.
 			cancelledAfterContact++
 		}
 		if favoriteAction(event) == "add" {

@@ -149,11 +149,6 @@ type AchievementMatch struct {
 	Evidence   []Evidence
 }
 
-// CategoryStat is a per-category rollup used for the "interests" section of
-// a recap (topCategories / newCategories / mostConsistentCategory). Unlike
-// the flat Metrics map, this carries the category's identity (Code/Name) —
-// previously calculateInterests only ever aggregated scalar counts and threw
-// away which category they belonged to.
 type CategoryStat struct {
 	CategoryID   uuid.UUID
 	Code         string

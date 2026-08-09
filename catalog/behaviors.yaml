@@ -250,11 +250,7 @@ behaviors:
       targetType: search
       href: https://www.avito.ru/rossiya
 
-  # Catch-all fallback: only matches if none of the more specific behaviors
-  # above matched, but the user had at least 1 action in the period. Without
-  # it, "medium activity" users (too much for rare_user, not enough for
-  # explorer/active_buyer/active_seller/etc.) got 422 insufficient_activity
-  # instead of a recap. name/description below are user-facing, not internal.
+  # average user activity so avg user will not get not enought activity 422 response
   - code: casual_activity
     name: Активность за период
     description: Заметная активность за год, но пока без выраженного сценария
