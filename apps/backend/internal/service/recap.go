@@ -103,7 +103,7 @@ func (s *RecapService) GenerateRecap(ctx context.Context, profileID uuid.UUID, y
 		return model.Recap{}, fmt.Errorf("%s: %w", op, ErrBehaviorNotMatched)
 	}
 
-	metrics, err := json.Marshal(result.Metrics)
+	metrics, err := result.MetricsJSON()
 	if err != nil {
 		return model.Recap{}, fmt.Errorf("%s: marshal recap metrics: %w", op, err)
 	}

@@ -19,9 +19,9 @@ type activityPoint struct {
 	categoryID *uuid.UUID
 }
 
-func (e *Engine) CalculateMetrics(dataset Dataset) (Metrics, error) {
+func (e *Engine) CalculateMetrics(dataset Dataset) (Result, error) {
 	if err := dataset.Period.Validate(); err != nil {
-		return Metrics{}, fmt.Errorf("validate period: %w", err)
+		return Result{}, fmt.Errorf("validate period: %w", err)
 	}
 
 	location := dataset.Period.Start.Location()
@@ -29,7 +29,7 @@ func (e *Engine) CalculateMetrics(dataset Dataset) (Metrics, error) {
 		var err error
 		location, err = time.LoadLocation(dataset.User.Timezone)
 		if err != nil {
-			return Metrics{}, fmt.Errorf("load user timezone %q: %w", dataset.User.Timezone, err)
+			return Result{}, fmt.Errorf("load user timezone %q: %w", dataset.User.Timezone, err)
 		}
 	}
 	cutoff := dataset.DataCutoffAt
@@ -60,15 +60,15 @@ func (e *Engine) CalculateMetrics(dataset Dataset) (Metrics, error) {
 	})
 
 	points := buildActivityPoints(dataset, userEvents, listings, cutoff)
-	metrics := NewMetrics()
-	e.calculateActivity(metrics, dataset, points, userEvents, listings, location, cutoff)
-	e.calculateInterests(metrics, dataset, points, userEvents, listings, location)
-	e.calculateIntent(metrics, dataset, userEvents, listings, cutoff)
-	e.calculateMarketplace(metrics, dataset, periodEvents, listings, cutoff)
-	e.calculateCommunity(metrics, dataset, cutoff)
-	e.calculateFeatures(metrics, userEvents)
+	result := Result{Metrics: NewMetrics()}
+	e.calculateActivity(&result, dataset, points, userEvents, listings, location, cutoff)
+	e.calculateInterests(&result, dataset, points, userEvents, listings, location)
+	e.calculateIntent(result.Metrics, dataset, userEvents, listings, cutoff)
+	e.calculateMarketplace(result.Metrics, dataset, periodEvents, listings, cutoff)
+	e.calculateCommunity(result.Metrics, dataset, cutoff)
+	e.calculateFeatures(result.Metrics, userEvents)
 
-	return metrics, nil
+	return result, nil
 }
 
 func buildActivityPoints(
@@ -130,7 +130,7 @@ func buildActivityPoints(
 }
 
 func (e *Engine) calculateActivity(
-	metrics Metrics,
+	result *Result,
 	dataset Dataset,
 	points []activityPoint,
 	events []model.ActivityEvent,
@@ -138,6 +138,7 @@ func (e *Engine) calculateActivity(
 	location *time.Location,
 	cutoff time.Time,
 ) {
+	metrics := result.Metrics
 	views := int64(0)
 	searches := int64(0)
 	uniqueListings := make(map[uuid.UUID]struct{})
@@ -154,6 +155,11 @@ func (e *Engine) calculateActivity(
 		months[local.Format("2006-01")]++
 		hours[local.Hour()]++
 		quarters[(int(local.Month())-1)/3]++
+		// Points are already scoped to dataset.Period (built from
+		// userEvents/listings/deals/reviews that pass Period.Contains), and
+		// PeriodForYear spans exactly one calendar year, so local.Month() is
+		// always within the recap's own year here.
+		result.MonthlyActivity[int(local.Month())-1]++
 	}
 
 	for _, event := range events {
@@ -204,13 +210,14 @@ func (e *Engine) calculateActivity(
 }
 
 func (e *Engine) calculateInterests(
-	metrics Metrics,
+	result *Result,
 	dataset Dataset,
 	points []activityPoint,
 	events []model.ActivityEvent,
 	listings map[uuid.UUID]model.Listing,
 	location *time.Location,
 ) {
+	metrics := result.Metrics
 	categoryActions := make(map[uuid.UUID]int64)
 	categoryMonths := make(map[uuid.UUID]map[string]struct{})
 	for _, point := range points {
@@ -268,6 +275,26 @@ func (e *Engine) calculateInterests(
 	_, topTopicActions := maxStringCount(topicCounts)
 	totalTopics := sumCounts(topicCounts)
 
+	// price_band preference: which of the listings the user interacted with
+	// (views/favorites/contacts/etc, via the same points list activity uses)
+	// skew budget/mid/premium. Not wired into the API response yet — no
+	// dedicated field in generated.InterestMetrics — but usable today by
+	// catalog behavior/achievement rules via interests.preferred_price_band
+	// and interests.premium_interactions_share.
+	bandCounts := make(map[string]int64)
+	for _, point := range points {
+		if point.listingID == nil {
+			continue
+		}
+		listing, exists := listings[*point.listingID]
+		if !exists || listing.PriceBand == "" {
+			continue
+		}
+		bandCounts[string(listing.PriceBand)]++
+	}
+	preferredBand, _ := maxStringCount(bandCounts)
+	totalBandInteractions := sumCounts(bandCounts)
+
 	metrics.Set("interests.distinct_categories", int64(len(categoryActions)))
 	metrics.Set("interests.top_category_actions", topCategoryActions)
 	metrics.Set("interests.top_category_share", ratio(topCategoryActions, sumCounts(categoryActions)))
@@ -275,6 +302,85 @@ func (e *Engine) calculateInterests(
 	metrics.Set("interests.most_consistent_category_months", consistentMonths)
 	metrics.Set("interests.low_supply_actions", lowSupplyActions)
 	metrics.Set("interests.top_search_topic_share", ratio(topTopicActions, totalTopics))
+	if preferredBand != "" {
+		metrics.Set("interests.preferred_price_band", preferredBand)
+	}
+	metrics.Set("interests.premium_interactions_share", ratio(bandCounts["premium"], totalBandInteractions))
+
+	// Category identity: which category is "top"/"new" was previously
+	// discarded (only the scalar counts above survived) — mapper.go had
+	// nothing to put in recap.metrics.interests.topCategories/newCategories,
+	// so those API fields were hardcoded to []. Resolve id -> code/name via
+	// dataset.Categories and keep the full per-category breakdown here.
+	categoriesByID := make(map[uuid.UUID]model.Category, len(dataset.Categories))
+	for _, category := range dataset.Categories {
+		categoriesByID[category.ID] = category
+	}
+	totalCategoryActions := sumCounts(categoryActions)
+
+	stats := make([]CategoryStat, 0, len(categoryActions))
+	for categoryID, actions := range categoryActions {
+		category, known := categoriesByID[categoryID]
+		if !known {
+			continue
+		}
+		stats = append(stats, CategoryStat{
+			CategoryID:   categoryID,
+			Code:         category.Code,
+			Name:         category.Name,
+			Actions:      actions,
+			ActiveMonths: int64(len(categoryMonths[categoryID])),
+			Share:        ratio(actions, totalCategoryActions),
+		})
+	}
+	// Deterministic ordering: map iteration order is randomized, and this
+	// feeds a persisted, idempotent recap snapshot, so ties must break the
+	// same way every time (by category code).
+	sortCategoryStats := func(items []CategoryStat) {
+		slices.SortFunc(items, func(left, right CategoryStat) int {
+			if left.Actions != right.Actions {
+				if left.Actions > right.Actions {
+					return -1
+				}
+				return 1
+			}
+			return strings.Compare(left.Code, right.Code)
+		})
+	}
+	sortCategoryStats(stats)
+
+	const topCategoryLimit = 5
+	if len(stats) > topCategoryLimit {
+		result.TopCategories = append([]CategoryStat(nil), stats[:topCategoryLimit]...)
+	} else {
+		result.TopCategories = stats
+	}
+
+	newStats := make([]CategoryStat, 0, len(stats))
+	for _, stat := range stats {
+		if _, seenBefore := priorCategories[stat.CategoryID]; seenBefore {
+			continue
+		}
+		if stat.Actions < int64(e.config.SignificantCategoryEvents) {
+			continue
+		}
+		newStats = append(newStats, stat)
+	}
+	if len(newStats) > topCategoryLimit {
+		newStats = newStats[:topCategoryLimit]
+	}
+	result.NewCategories = newStats
+
+	if len(stats) > 0 {
+		mostConsistent := stats[0]
+		for _, stat := range stats[1:] {
+			if stat.ActiveMonths > mostConsistent.ActiveMonths ||
+				(stat.ActiveMonths == mostConsistent.ActiveMonths && stat.Code < mostConsistent.Code) {
+				mostConsistent = stat
+			}
+		}
+		result.MostConsistentCategory = &mostConsistent
+	}
 }
 
 func (e *Engine) calculateIntent(
@@ -313,6 +419,7 @@ func (e *Engine) calculateIntent(
 		}
 	}
 
+	cancelledAfterContact := int64(0)
 	for _, event := range events {
 		typeName := normalizeEventType(event.Type)
 		if typeName == "search" {
@@ -332,6 +439,13 @@ func (e *Engine) calculateIntent(
 			viewTimes[*event.ListingID] = append(viewTimes[*event.ListingID], event.OccurredAt)
 		case "contact":
 			contactTimes[*event.ListingID] = append(contactTimes[*event.ListingID], event.OccurredAt)
+		case "deal_cancelled":
+			// The generator only emits deal_cancelled after a contact event
+			// for the same listing (business-logic invariant, checked by
+			// TestBusinessLogic in the generator), so counting the event
+			// itself is enough — no need to re-verify ordering against
+			// contactTimes here.
+			cancelledAfterContact++
 		}
 		if favoriteAction(event) == "add" {
 			favoritesAdded++
@@ -435,6 +549,7 @@ func (e *Engine) calculateIntent(
 	metrics.Set("intent.max_views_before_contact", maxViewsBeforeContact)
 	metrics.Set("intent.favorite_to_contact_conversion", ratio(contactedFavorites, int64(len(periodFavorites))))
 	metrics.Set("intent.completed_search_to_deal_paths", completedSearchPaths)
+	metrics.Set("intent.cancelled_after_contact", cancelledAfterContact)
 }
 
 func (e *Engine) calculateMarketplace(
@@ -605,6 +720,7 @@ func (e *Engine) calculateFeatures(metrics Metrics, events []model.ActivityEvent
 	notificationOpens := int64(0)
 	promotionUses := int64(0)
 	searchesWithFilters := int64(0)
+	listingsShared := int64(0)
 	for _, event := range events {
 		switch normalizeEventType(event.Type) {
 		case "notification_open":
@@ -615,6 +731,8 @@ func (e *Engine) calculateFeatures(metrics Metrics, events []model.ActivityEvent
 			if event.FilterCount != nil && *event.FilterCount > 0 {
 				searchesWithFilters++
 			}
+		case "listing_share":
+			listingsShared++
 		}
 		if event.Source != nil && strings.EqualFold(string(*event.Source), "notification") {
 			notificationOpens++
@@ -623,6 +741,7 @@ func (e *Engine) calculateFeatures(metrics Metrics, events []model.ActivityEvent
 	metrics.Set("features.notification_opens", notificationOpens)
 	metrics.Set("features.promotion_uses", promotionUses)
 	metrics.Set("features.searches_with_filters", searchesWithFilters)
+	metrics.Set("features.listings_shared", listingsShared)
 }
 
 func normalizeEventType(eventType model.EventType) string {
@@ -640,6 +759,12 @@ func normalizeEventType(eventType model.EventType) string {
 		return "notification_open"
 	case "promotion":
 		return "promotion_use"
+	case "edit":
+		return "listing_edit"
+	case "share":
+		return "listing_share"
+	case "cancel_deal":
+		return "deal_cancelled"
 	default:
 		return value
 	}

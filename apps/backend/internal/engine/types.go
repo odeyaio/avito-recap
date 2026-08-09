@@ -12,6 +12,8 @@ import (
 
 	"avito-recap/internal/catalog"
 	"avito-recap/internal/model"
+
+	"github.com/google/uuid"
 )
 
 var ErrNoActivity = errors.New("no activity in recap period")
@@ -147,8 +149,32 @@ type AchievementMatch struct {
 	Evidence   []Evidence
 }
 
+// CategoryStat is a per-category rollup used for the "interests" section of
+// a recap (topCategories / newCategories / mostConsistentCategory). Unlike
+// the flat Metrics map, this carries the category's identity (Code/Name) —
+// previously calculateInterests only ever aggregated scalar counts and threw
+// away which category they belonged to.
+type CategoryStat struct {
+	CategoryID   uuid.UUID
+	Code         string
+	Name         string
+	Actions      int64
+	ActiveMonths int64
+	Share        float64
+}
+
 type Result struct {
 	Metrics      Metrics
 	Behaviors    []BehaviorMatch
 	Achievements []AchievementMatch
+
+	// TopCategories / NewCategories / MostConsistentCategory carry category
+	// identity for interests.* — see CategoryStat.
+	TopCategories          []CategoryStat
+	NewCategories          []CategoryStat
+	MostConsistentCategory *CategoryStat
+
+	// MonthlyActivity is a 12-slot (Jan..Dec) count of activity points in the
+	// recap period, indexed by month-1.
+	MonthlyActivity [12]int64
 }

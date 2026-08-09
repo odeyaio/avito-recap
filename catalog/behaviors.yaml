@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./behavior-catalog.schema.json
 
-version: v4
+version: v5
 
 behaviors:
   - code: explorer
@@ -247,5 +247,25 @@ behaviors:
     defaultAction:
       code: open_personal_collection
       title: Посмотреть персональную подборку
+      targetType: search
+      href: https://www.avito.ru/rossiya
+
+  - code: casual_activity
+    name: Активность за период
+    description: >-
+      Универсальный запасной вариант — срабатывает только если ни один из
+      более специфичных сценариев выше не подошёл, но за период была хоть
+      какая-то активность. Без него пользователи со "средней" активностью
+      (недостаточной для explorer/active_buyer/active_seller и т.д., но
+      больше чем rare_user) получали 422 insufficient_activity вместо recap.
+    sortOrder: 140
+    rule:
+      all:
+        - metric: activity.total_actions
+          operator: gte
+          value: 1
+    defaultAction:
+      code: open_general_catalog
+      title: Посмотреть все объявления
       targetType: search
       href: https://www.avito.ru/rossiya
