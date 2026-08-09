@@ -65,7 +65,6 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 		}
 	}
 
-	// Convert listings to ListingWithGenData
 	listingsWithGen := make([]ListingWithGenData, len(listings))
 	for idx, listing := range listings {
 		categoryName := ""
@@ -90,10 +89,10 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 	}
 
 	generatorConfig := DefaultGeneratorConfig()
-	
+
 	soldListings := make(map[uuid.UUID]bool)
 	cancelledListingsPerUser := make(map[uuid.UUID]map[uuid.UUID]bool) // userID -> listingID -> cancelled
-	
+
 	for _, user := range usersWithGen {
 		if cancelledListingsPerUser[user.ID] == nil {
 			cancelledListingsPerUser[user.ID] = make(map[uuid.UUID]bool)
@@ -105,20 +104,11 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 			baseTime = time.Now().UTC().Add(-time.Duration(generatorConfig.EventBaseTimeOffsetHours) * time.Hour)
 		}
 		now := time.Now().UTC()
-		// Most intents are pinned into the last RecentActivityWindowMonths
-		// (default 14 months) so that whichever recent year a recap is
-		// requested for actually has data in it. The remainder are spread
-		// across the user's whole registration history, which is what
-		// feeds "returned after a long gap" / multi-year signals. Without
-		// this bias, every intent used to land within IntentSpreadDays of
-		// RegisteredAt (a single ~week-long burst 1-2 years ago) — a recap
-		// request for any other year saw zero events and returned 422.
 		recentWindowStart := now.AddDate(0, -generatorConfig.RecentActivityWindowMonths, 0)
 		if recentWindowStart.Before(baseTime) {
 			recentWindowStart = baseTime
 		}
 
-		// Generate multiple intents based on preferred categories and their purchase volume
 		intentCount := cfg.IntentCount
 		if intentCount <= 0 {
 			intentCount = calculateIntentCount(user.PreferredCategories, categories, generatorConfig, rnd)
@@ -146,11 +136,6 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 			filtered := filterListingsForIntent(listingsWithGen, user, categoryName, maxPrice, cfg)
 			initialCandidates := selectSearchCandidates(rnd, filtered, user, cfg)
 
-			// Search event. TopicKey/ResultCount/FilterCount are set as
-			// real typed columns, not just nested inside Properties — the
-			// engine's metrics (features.searches_with_filters,
-			// interests.top_search_topic_share/low_supply_actions) read
-			// those struct fields directly and previously always saw nil.
 			categoryUUID := CategoryID(categoryName)
 			topic := categoryName
 			resultCount := len(filtered)
@@ -165,7 +150,7 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 			events = append(events, model.ActivityEvent{
 				ID:          seededUUID(rnd),
 				UserID:      user.ID,
-				Type:        model.EventType(model.EventTypeSearch),
+				Type:        (model.EventTypeSearch),
 				OccurredAt:  intentBaseTime,
 				CategoryID:  &categoryUUID,
 				TopicKey:    &topic,
@@ -174,23 +159,23 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 				Properties:  properties,
 				IngestedAt:  time.Now().UTC(),
 			})
-			
+
 			// VIEW stage - filter through view probability
 			viewedListings := make([]ListingWithGenData, 0)
 			for _, listing := range initialCandidates {
 				if rnd.Float64() < clamp(cfg.View, 0, 1) {
 					viewedListings = append(viewedListings, listing)
-					
+
 					listingID := listing.ID
 					categoryID := listing.CategoryID
-					
+
 					// Determine if this view starts from a notification
 					var source *model.EventSource
 					if rnd.Float64() < clamp(cfg.NotificationOpen, 0, 1) {
 						notificationSource := model.EventSource(model.EventSourceNotification)
 						source = &notificationSource
 					}
-					
+
 					viewTime := randomTimeOffset(intentBaseTime, generatorConfig.EventRandomSpreadSeconds, rnd)
 					properties, _ := json.Marshal(map[string]interface{}{"price_band": listing.PriceBand})
 					events = append(events, model.ActivityEvent{
@@ -228,7 +213,7 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 			for _, listing := range viewedListings {
 				if rnd.Float64() < clamp(cfg.Favorite, 0, 1) {
 					favoritedListings = append(favoritedListings, listing)
-					
+
 					listingID := listing.ID
 					categoryID := listing.CategoryID
 					favoriteTime := randomTimeOffset(intentBaseTime.Add(time.Duration(generatorConfig.EventFavoriteOffsetMinutes)*time.Minute), generatorConfig.EventRandomSpreadSeconds, rnd)
@@ -293,16 +278,16 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 				if cancelledListingsPerUser[user.ID][listing.ID] || soldListings[listing.ID] {
 					continue
 				}
-				
+
 				if rnd.Float64() < clamp(cfg.Deal, 0, 1) {
 					dealTime := intentBaseTime.Add(time.Duration(generatorConfig.EventDealOffsetMinutes) * time.Minute)
-					
+
 					// Check if deal should be cancelled after creation
 					isCancelled := rnd.Float64() < generatorConfig.CancelAfterDealProbability
-					
+
 					var completedAt *time.Time
 					var status model.DealStatus
-					
+
 					if isCancelled {
 						// Cancelled deals have no completion time
 						status = model.DealStatus("cancelled")
@@ -314,7 +299,7 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 						completedAt = &completedAtTime
 						status = model.DealStatus("completed")
 					}
-					
+
 					deal := model.Deal{
 						ID:           uuid.New(),
 						ListingID:    listing.ID,
@@ -326,7 +311,7 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 						PriceBand:    listing.PriceBand,
 					}
 					deals = append(deals, deal)
-					
+
 					// Only mark listing as sold if deal is not cancelled
 					if !isCancelled {
 						soldListings[listing.ID] = true
@@ -356,9 +341,9 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 // calculateIntentCount determines how many intents a user should have based on their preferred categories
 func calculateIntentCount(preferredCategories []string, categories []CategoryConfig, config GeneratorConfig, rnd *rand.Rand) int {
 	if len(preferredCategories) == 0 {
-		return config.IntentCountMin + rnd.Intn(2) 
+		return config.IntentCountMin + rnd.Intn(2)
 	}
-	
+
 	totalVolume := 0.0
 	for _, prefCat := range preferredCategories {
 		for _, cat := range categories {
@@ -368,7 +353,7 @@ func calculateIntentCount(preferredCategories []string, categories []CategoryCon
 			}
 		}
 	}
-	
+
 	intentCount := int(totalVolume * config.IntentCountMultiplier)
 	if intentCount < config.IntentCountMin {
 		intentCount = config.IntentCountMin
@@ -376,7 +361,7 @@ func calculateIntentCount(preferredCategories []string, categories []CategoryCon
 	if intentCount > config.IntentCountMax {
 		intentCount = config.IntentCountMax
 	}
-	
+
 	return intentCount
 }
 
@@ -387,7 +372,7 @@ func selectIntentCategoryForIndex(cfg UserConfig, categories []CategoryConfig, i
 		}
 		return ""
 	}
-	
+
 	return cfg.PreferredCategories[intentIndex%len(cfg.PreferredCategories)]
 }
 
@@ -400,14 +385,14 @@ func selectSearchCandidates(rnd *rand.Rand, listings []ListingWithGenData, user 
 	if count > len(listings) {
 		count = len(listings)
 	}
-	
+
 	shuffled := make([]ListingWithGenData, len(listings))
 	copy(shuffled, listings)
-	
+
 	for i := len(shuffled) - 1; i > 0; i-- {
 		j := rnd.Intn(i + 1)
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	}
-	
+
 	return shuffled[:count]
 }

@@ -8,13 +8,6 @@ import (
 	"avito-recap/internal/model"
 )
 
-// GenerateListingData creates listings published at random points across the
-// last ListingHistoryYears (relative to referenceNow), not "today .. today+30d".
-// Listings must overlap in time with the user activity that references them —
-// activity_events dated a year or two ago pointing at a listing published
-// next month meant every past-year recap request filtered the listing out
-// entirely (postgres.DatasetRepository.loadListings requires published_at <
-// cutoff), which silently zeroed out every seller-side/marketplace metric.
 func GenerateListingData(seed int64, numListings int, categories []CategoryConfig, sellers []model.User, referenceNow time.Time) []model.Listing {
 	if numListings <= 0 || len(sellers) == 0 {
 		return nil
@@ -40,11 +33,6 @@ func GenerateListingData(seed int64, numListings int, categories []CategoryConfi
 			closedAt = &closedAtValue
 		}
 
-		// Same vocabulary as UserConfig.PriceSegment ("budget"/"mid"/
-		// "premium") — events.go's estimateIntentPrice/listing-price switch
-		// matches on exactly these strings. The previous "low"/"medium"/
-		// "high" values never matched, so price-based candidate filtering
-		// was silently a no-op for every user.
 		priceBand := "mid"
 		if category.MaxPrice > 0 && category.MaxPrice <= config.PriceBandLowMax {
 			priceBand = "budget"

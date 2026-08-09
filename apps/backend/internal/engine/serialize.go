@@ -2,10 +2,6 @@ package engine
 
 import "encoding/json"
 
-// categoryStatJSON is the on-disk shape for a CategoryStat inside the
-// persisted RecapSnapshot.Metrics JSONB. Kept separate from CategoryStat
-// itself so the Go-side struct (which also carries CategoryID, used only
-// for in-process dedup/lookups) doesn't leak into the stored payload.
 type categoryStatJSON struct {
 	Code         string  `json:"code"`
 	Name         string  `json:"name"`
@@ -28,12 +24,6 @@ func categoryStatsJSON(stats []CategoryStat) []categoryStatJSON {
 	return result
 }
 
-// MetricsJSON renders the full payload stored in RecapSnapshot.Metrics: the
-// flat rule metrics (activity.*, interests.*, ...) that Metrics.MarshalJSON
-// already nests into {"group":{"name":value}}, plus the structured data that
-// doesn't fit that flat scalar model — per-category breakdowns and the
-// month-by-month activity count. adapter/in/http/mapper.go's
-// snapshotMetrics struct reads exactly this shape back out.
 func (r Result) MetricsJSON() (json.RawMessage, error) {
 	flat, err := json.Marshal(r.Metrics)
 	if err != nil {

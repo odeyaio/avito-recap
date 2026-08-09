@@ -19,10 +19,6 @@ var (
 	errNextActionMissing      = errors.New("next action is missing")
 )
 
-// categoryMetric is the decode-side counterpart of engine's categoryStatJSON
-// (see internal/engine/serialize.go) — connected only via matching JSON
-// tags, not a shared Go type, to keep the http adapter decoupled from the
-// engine's internal representation.
 type categoryMetric struct {
 	Code         string  `json:"code"`
 	Name         string  `json:"name"`
@@ -33,14 +29,14 @@ type categoryMetric struct {
 
 type snapshotMetrics struct {
 	Activity struct {
-		Views                   int64   `json:"views"`
-		UniqueListingsViewed    int64   `json:"unique_listings_viewed"`
-		Searches                int64   `json:"searches"`
-		ActiveDays              int32   `json:"active_days"`
-		ActiveMonths            int32   `json:"active_months"`
-		LongestActiveStreakDays int32   `json:"longest_active_streak_days"`
-		MostActiveMonth         string  `json:"most_active_month"`
-		FavoriteHour            int32   `json:"favorite_hour"`
+		Views                   int64     `json:"views"`
+		UniqueListingsViewed    int64     `json:"unique_listings_viewed"`
+		Searches                int64     `json:"searches"`
+		ActiveDays              int32     `json:"active_days"`
+		ActiveMonths            int32     `json:"active_months"`
+		LongestActiveStreakDays int32     `json:"longest_active_streak_days"`
+		MostActiveMonth         string    `json:"most_active_month"`
+		FavoriteHour            int32     `json:"favorite_hour"`
 		MonthlyActions          [12]int64 `json:"monthly_actions"`
 	} `json:"activity"`
 	Interests struct {
@@ -136,13 +132,6 @@ func recapResponse(recap model.Recap) (generated.Recap, error) {
 	}, nil
 }
 
-// shareCardResponse builds the compact, safe-to-share summary of a recap.
-// Only already-public/shareable-flagged data goes in here: the primary
-// behavior's own name/description (always shown to the user anyway) and, if
-// any achievement was marked shareable by the catalog, its icon. Previously
-// nothing populated generated.Recap.ShareCard at all — the field existed in
-// the contract but recapResponse never set it, so API responses always had
-// shareCard: null.
 func shareCardResponse(primary generated.BehaviorMatch, achievements []generated.Achievement) generated.ShareCard {
 	card := generated.ShareCard{
 		Title:    fmt.Sprintf("Мой тип года — «%s»", primary.Name),

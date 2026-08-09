@@ -46,29 +46,22 @@ type GeneratorConfig struct {
 	IntentCountMin                       int
 	IntentCountMax                       int
 	IntentSpreadDays                     int
-	// RecentActivityWindowMonths / RecentActivityBias make each user's
-	// intents land mostly within the last N months instead of being spread
-	// evenly across their whole registration history. Without this, a
-	// user's whole year of activity tends to end up in whichever single
-	// year their random RegisteredAt happened to fall in, and a recap
-	// request for a different year sees zero events (422 insufficient
-	// activity) even though the user "has" plenty of generated data.
-	RecentActivityWindowMonths  int
-	RecentActivityBias          float64
-	SearchCandidatePoolSize     int
-	EventFavoriteOffsetMinutes  int
-	EventContactOffsetMinutes   int
-	EventDealOffsetMinutes      int
-	EventReviewOffsetHours      int
-	DealCompletionMinHours      int
-	DealCompletionMaxHours      int
-	EventRandomSpreadSeconds    int
-	ListingEditProbability      float64
-	ListingEditMinDays          int
-	ListingEditMaxDays          int
-	ShareProbability            float64
-	CancelDealProbability       float64
-	CancelAfterDealProbability  float64
+	RecentActivityWindowMonths           int
+	RecentActivityBias                   float64
+	SearchCandidatePoolSize              int
+	EventFavoriteOffsetMinutes           int
+	EventContactOffsetMinutes            int
+	EventDealOffsetMinutes               int
+	EventReviewOffsetHours               int
+	DealCompletionMinHours               int
+	DealCompletionMaxHours               int
+	EventRandomSpreadSeconds             int
+	ListingEditProbability               float64
+	ListingEditMinDays                   int
+	ListingEditMaxDays                   int
+	ShareProbability                     float64
+	CancelDealProbability                float64
+	CancelAfterDealProbability           float64
 }
 
 func DefaultGeneratorConfig() GeneratorConfig {
@@ -210,7 +203,7 @@ func RandomUserConfig(rnd *rand.Rand, categories []CategoryConfig) UserConfig {
 		Review:                  review,
 		NotificationOpen:        notificationOpen,
 		SellFrequency:           sellFrequency,
-		IntentCount:             0, 
+		IntentCount:             0,
 		PriceSegment:            priceSegment,
 		PreferredCategories:     preferred,
 		UnlikelyCategories:      unlikely,
