@@ -73,7 +73,7 @@ func InsertActivityEvents(ctx context.Context, pool *pgxpool.Pool, events []mode
 		_, err := pool.Exec(ctx, `
 			INSERT INTO activity_events (id, user_id, event_type, occurred_at, listing_id, category_id, duration_seconds, result_count, filter_count, topic_key, source_type, properties, ingested_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		`, event.ID, event.UserID, event.Type, event.OccurredAt, event.ListingID, event.CategoryID, event.DurationSeconds, event.ResultCount, event.FilterCount, event.TopicKey, nil, event.Properties, event.IngestedAt)
+		`, event.ID, event.UserID, event.Type, event.OccurredAt, event.ListingID, event.CategoryID, event.DurationSeconds, event.ResultCount, event.FilterCount, event.TopicKey, event.Source, event.Properties, event.IngestedAt)
 		if err != nil {
 			return fmt.Errorf("insert activity event %s: %w", event.ID, err)
 		}

@@ -1,0 +1,12 @@
+FROM golang:1.26.5-alpine
+
+WORKDIR /src
+
+COPY apps/backend/go.mod apps/backend/go.sum ./
+RUN go mod download
+
+COPY apps/backend/ ./
+COPY catalog/ /catalog/
+
+ENTRYPOINT ["go", "run", "./cmd/catalog-import"]
+CMD ["-achievements-file=/catalog/achievements.yaml", "-behaviors-file=/catalog/behaviors.yaml"]

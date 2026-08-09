@@ -104,13 +104,26 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 		if baseTime.IsZero() {
 			baseTime = time.Now().UTC().Add(-time.Duration(generatorConfig.EventBaseTimeOffsetHours) * time.Hour)
 		}
+		now := time.Now().UTC()
+		// Most intents are pinned into the last RecentActivityWindowMonths
+		// (default 14 months) so that whichever recent year a recap is
+		// requested for actually has data in it. The remainder are spread
+		// across the user's whole registration history, which is what
+		// feeds "returned after a long gap" / multi-year signals. Without
+		// this bias, every intent used to land within IntentSpreadDays of
+		// RegisteredAt (a single ~week-long burst 1-2 years ago) — a recap
+		// request for any other year saw zero events and returned 422.
+		recentWindowStart := now.AddDate(0, -generatorConfig.RecentActivityWindowMonths, 0)
+		if recentWindowStart.Before(baseTime) {
+			recentWindowStart = baseTime
+		}
 
 		// Generate multiple intents based on preferred categories and their purchase volume
 		intentCount := cfg.IntentCount
 		if intentCount <= 0 {
 			intentCount = calculateIntentCount(user.PreferredCategories, categories, generatorConfig, rnd)
 		}
-		
+
 		for intentIdx := 0; intentIdx < intentCount; intentIdx++ {
 			// Select category for this intent
 			categoryName := selectIntentCategoryForIndex(cfg, categories, intentIdx)
@@ -121,26 +134,46 @@ func GenerateUserEvents(seed int64, users []model.User, config []UserConfig, lis
 				}
 			}
 
-			intentBaseTime := randomDateAfter(baseTime, rnd, generatorConfig.IntentSpreadDays)
-
-			// Search event
-			properties, _ := json.Marshal(map[string]interface{}{
-				"topic":   categoryName,
-				"filters": map[string]interface{}{"category": categoryName},
-			})
-			events = append(events, model.ActivityEvent{
-				ID:         seededUUID(rnd),
-				UserID:     user.ID,
-				Type:       model.EventType(model.EventTypeSearch),
-				OccurredAt: intentBaseTime,
-				Properties: properties,
-				IngestedAt: time.Now().UTC(),
-			})
+			var intentBaseTime time.Time
+			if rnd.Float64() < generatorConfig.RecentActivityBias {
+				intentBaseTime = randomDateBetweenRange(recentWindowStart, now, rnd)
+			} else {
+				intentBaseTime = randomDateBetweenRange(baseTime, now, rnd)
+			}
 
 			// Get initial candidates from search
 			maxPrice := estimateIntentPrice(cfg, categoryName, categories)
 			filtered := filterListingsForIntent(listingsWithGen, user, categoryName, maxPrice, cfg)
 			initialCandidates := selectSearchCandidates(rnd, filtered, user, cfg)
+
+			// Search event. TopicKey/ResultCount/FilterCount are set as
+			// real typed columns, not just nested inside Properties — the
+			// engine's metrics (features.searches_with_filters,
+			// interests.top_search_topic_share/low_supply_actions) read
+			// those struct fields directly and previously always saw nil.
+			categoryUUID := CategoryID(categoryName)
+			topic := categoryName
+			resultCount := len(filtered)
+			filterCount := 0
+			if rnd.Float64() < 0.7 {
+				filterCount = 1 + rnd.Intn(2)
+			}
+			properties, _ := json.Marshal(map[string]interface{}{
+				"topic":   categoryName,
+				"filters": map[string]interface{}{"category": categoryName},
+			})
+			events = append(events, model.ActivityEvent{
+				ID:          seededUUID(rnd),
+				UserID:      user.ID,
+				Type:        model.EventType(model.EventTypeSearch),
+				OccurredAt:  intentBaseTime,
+				CategoryID:  &categoryUUID,
+				TopicKey:    &topic,
+				ResultCount: &resultCount,
+				FilterCount: &filterCount,
+				Properties:  properties,
+				IngestedAt:  time.Now().UTC(),
+			})
 			
 			// VIEW stage - filter through view probability
 			viewedListings := make([]ListingWithGenData, 0)
@@ -362,8 +395,8 @@ func selectSearchCandidates(rnd *rand.Rand, listings []ListingWithGenData, user 
 	if len(listings) == 0 {
 		return nil
 	}
-	
-	count := 10 
+
+	count := DefaultGeneratorConfig().SearchCandidatePoolSize
 	if count > len(listings) {
 		count = len(listings)
 	}

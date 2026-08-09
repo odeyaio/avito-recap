@@ -33,8 +33,7 @@ type GeneratorConfig struct {
 	UserRegistrationYearsAgo             int
 	SellerRegistrationYearsAgo           int
 	SellerSelectionRate                  float64
-	ListingPublishWindowDays             int
-	ListingPublishWindowFallbackDays     int
+	ListingHistoryYears                  int
 	PriceBandLowMax                      float64
 	PriceBandHighMin                     float64
 	ListingDeliveryProbabilityPercent    int
@@ -47,28 +46,37 @@ type GeneratorConfig struct {
 	IntentCountMin                       int
 	IntentCountMax                       int
 	IntentSpreadDays                     int
-	EventFavoriteOffsetMinutes           int
-	EventContactOffsetMinutes            int
-	EventDealOffsetMinutes               int
-	EventReviewOffsetHours               int
-	DealCompletionMinHours               int
-	DealCompletionMaxHours               int
-	EventRandomSpreadSeconds             int
-	ListingEditProbability               float64
-	ListingEditMinDays                   int
-	ListingEditMaxDays                   int
-	ShareProbability                     float64
-	CancelDealProbability                float64
-	CancelAfterDealProbability           float64
+	// RecentActivityWindowMonths / RecentActivityBias make each user's
+	// intents land mostly within the last N months instead of being spread
+	// evenly across their whole registration history. Without this, a
+	// user's whole year of activity tends to end up in whichever single
+	// year their random RegisteredAt happened to fall in, and a recap
+	// request for a different year sees zero events (422 insufficient
+	// activity) even though the user "has" plenty of generated data.
+	RecentActivityWindowMonths  int
+	RecentActivityBias          float64
+	SearchCandidatePoolSize     int
+	EventFavoriteOffsetMinutes  int
+	EventContactOffsetMinutes   int
+	EventDealOffsetMinutes      int
+	EventReviewOffsetHours      int
+	DealCompletionMinHours      int
+	DealCompletionMaxHours      int
+	EventRandomSpreadSeconds    int
+	ListingEditProbability      float64
+	ListingEditMinDays          int
+	ListingEditMaxDays          int
+	ShareProbability            float64
+	CancelDealProbability       float64
+	CancelAfterDealProbability  float64
 }
 
 func DefaultGeneratorConfig() GeneratorConfig {
 	return GeneratorConfig{
-		UserRegistrationYearsAgo:             2,
+		UserRegistrationYearsAgo:             3,
 		SellerRegistrationYearsAgo:           3,
 		SellerSelectionRate:                  0.15,
-		ListingPublishWindowDays:             30,
-		ListingPublishWindowFallbackDays:     7,
+		ListingHistoryYears:                  3,
 		PriceBandLowMax:                      10000,
 		PriceBandHighMin:                     100000,
 		ListingDeliveryProbabilityPercent:    30,
@@ -77,10 +85,13 @@ func DefaultGeneratorConfig() GeneratorConfig {
 		EventDefaultCategory:                 "Электроника",
 		EventBaseTimeOffsetHours:             24,
 		EventSpreadDays:                      3,
-		IntentCountMultiplier:                5.0,
-		IntentCountMin:                       1,
-		IntentCountMax:                       15,
+		IntentCountMultiplier:                8.0,
+		IntentCountMin:                       6,
+		IntentCountMax:                       40,
 		IntentSpreadDays:                     7,
+		RecentActivityWindowMonths:           14,
+		RecentActivityBias:                   0.75,
+		SearchCandidatePoolSize:              15,
 		EventFavoriteOffsetMinutes:           5,
 		EventContactOffsetMinutes:            15,
 		EventDealOffsetMinutes:               30,

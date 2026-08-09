@@ -8,7 +8,14 @@ import (
 	"avito-recap/internal/model"
 )
 
-func GenerateListingData(seed int64, numListings int, categories []CategoryConfig, sellers []model.User, openUntil time.Time) []model.Listing {
+// GenerateListingData creates listings published at random points across the
+// last ListingHistoryYears (relative to referenceNow), not "today .. today+30d".
+// Listings must overlap in time with the user activity that references them —
+// activity_events dated a year or two ago pointing at a listing published
+// next month meant every past-year recap request filtered the listing out
+// entirely (postgres.DatasetRepository.loadListings requires published_at <
+// cutoff), which silently zeroed out every seller-side/marketplace metric.
+func GenerateListingData(seed int64, numListings int, categories []CategoryConfig, sellers []model.User, referenceNow time.Time) []model.Listing {
 	if numListings <= 0 || len(sellers) == 0 {
 		return nil
 	}
@@ -16,6 +23,7 @@ func GenerateListingData(seed int64, numListings int, categories []CategoryConfi
 	source := rand.NewSource(seed)
 	rnd := rand.New(source)
 	config := DefaultGeneratorConfig()
+	historyStart := referenceNow.AddDate(-config.ListingHistoryYears, 0, 0)
 
 	listings := make([]model.Listing, 0, numListings)
 	for i := 0; i < numListings; i++ {
@@ -25,22 +33,23 @@ func GenerateListingData(seed int64, numListings int, categories []CategoryConfi
 			category = categories[rnd.Intn(len(categories))]
 		}
 
-		publishedWindowStart := openUntil.AddDate(0, 0, -config.ListingPublishWindowDays)
-		if publishedWindowStart.After(openUntil) {
-			publishedWindowStart = openUntil.AddDate(0, 0, -config.ListingPublishWindowFallbackDays)
-		}
-		publishedAt := randomDateBetweenRange(publishedWindowStart, openUntil, rnd)
+		publishedAt := randomDateBetweenRange(historyStart, referenceNow, rnd)
 		var closedAt *time.Time
-		if openUntil.After(publishedAt) && rnd.Float64() < 0.5 {
-			closedAtValue := randomDateBetweenRange(publishedAt, openUntil, rnd)
+		if rnd.Float64() < 0.5 {
+			closedAtValue := randomDateBetweenRange(publishedAt, referenceNow, rnd)
 			closedAt = &closedAtValue
 		}
 
-		priceBand := "medium"
+		// Same vocabulary as UserConfig.PriceSegment ("budget"/"mid"/
+		// "premium") — events.go's estimateIntentPrice/listing-price switch
+		// matches on exactly these strings. The previous "low"/"medium"/
+		// "high" values never matched, so price-based candidate filtering
+		// was silently a no-op for every user.
+		priceBand := "mid"
 		if category.MaxPrice > 0 && category.MaxPrice <= config.PriceBandLowMax {
-			priceBand = "low"
+			priceBand = "budget"
 		} else if category.MaxPrice > config.PriceBandHighMin {
-			priceBand = "high"
+			priceBand = "premium"
 		}
 
 		listings = append(listings, model.Listing{
