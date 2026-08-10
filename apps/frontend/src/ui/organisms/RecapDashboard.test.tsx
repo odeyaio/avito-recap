@@ -15,7 +15,7 @@ function renderDashboard(onReplay: () => void) {
   );
 }
 
-test("shows the headline, every achievement, every story card and the next action", () => {
+test("shows the headline, every achievement and the next action", () => {
   renderDashboard(vi.fn());
 
   expect(
@@ -25,14 +25,17 @@ test("shows the headline, every achievement, every story card and the next actio
   for (const achievement of recap.achievements) {
     expect(screen.getByText(achievement.name)).toBeInTheDocument();
   }
-  for (const card of recap.story.cards) {
-    expect(screen.getByText(card.title)).toBeInTheDocument();
-  }
 
   expect(screen.getByRole("link", { name: "Перейти" })).toHaveAttribute(
     "href",
     recap.nextAction.href,
   );
+});
+
+test("doesn't duplicate achievement-kind story cards in a separate grid", () => {
+  renderDashboard(vi.fn());
+
+  expect(screen.queryByText("Карточки года")).not.toBeInTheDocument();
 });
 
 test("opens an explanation dialog when an achievement badge is tapped", async () => {

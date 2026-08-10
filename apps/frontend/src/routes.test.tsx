@@ -57,21 +57,17 @@ test("steps through story cards via tap and keyboard", async () => {
 
   fireEvent.click(screen.getByRole("button", { name: "Следующая карточка" }));
   expect(
-    await screen.findByRole("heading", {
-      name: "Электроника — ваша главная тема",
-    }),
+    await screen.findByRole("heading", { name: "Исследователь" }),
   ).toBeInTheDocument();
 
   fireEvent.keyDown(window, { key: "ArrowRight" });
   expect(
-    await screen.findByRole("heading", { name: "18 дней подряд" }),
+    await screen.findByRole("heading", { name: "Исследователь года" }),
   ).toBeInTheDocument();
 
   fireEvent.keyDown(window, { key: "ArrowLeft" });
   expect(
-    await screen.findByRole("heading", {
-      name: "Электроника — ваша главная тема",
-    }),
+    await screen.findByRole("heading", { name: "Исследователь" }),
   ).toBeInTheDocument();
 });
 
@@ -82,10 +78,7 @@ test("opens an explanation dialog for a behavior card reached through the player
     name: "Ваш тип года — «Исследователь»",
   });
 
-  const next = screen.getByRole("button", { name: "Следующая карточка" });
-  fireEvent.click(next); // top_category
-  fireEvent.click(next); // activity_streak
-  fireEvent.click(next); // behavior_reveal
+  fireEvent.click(screen.getByRole("button", { name: "Следующая карточка" }));
 
   const behaviorHeading = await screen.findByRole("heading", {
     name: "Исследователь",
@@ -107,15 +100,14 @@ test("finishing the story shows the dashboard, and replay restarts the story", a
   });
 
   const next = screen.getByRole("button", { name: "Следующая карточка" });
-  fireEvent.click(next); // top_category
-  fireEvent.click(next); // activity_streak
-  fireEvent.click(next); // behavior_reveal
-  fireEvent.click(next); // achievement_spotlight (last slide)
+  fireEvent.click(next); // behavior
+  fireEvent.click(next); // explorer_of_the_year
+  fireEvent.click(next); // always_informed (last slide)
   fireEvent.click(next); // past the last slide -> dashboard
 
   expect(
     await screen.findByRole("link", { name: "Перейти" }),
-  ).toHaveAttribute("href", "/search?category=electronics");
+  ).toHaveAttribute("href", "https://www.avito.ru/rossiya/elektronika");
   expect(
     screen.getByRole("button", { name: "Исследователь года" }),
   ).toBeInTheDocument();
@@ -138,7 +130,6 @@ test("shares only the public share card, not the underlying metrics", async () =
   });
 
   const next = screen.getByRole("button", { name: "Следующая карточка" });
-  fireEvent.click(next);
   fireEvent.click(next);
   fireEvent.click(next);
   fireEvent.click(next);
@@ -177,14 +168,13 @@ test("golden path: intro -> pick a profile -> story -> dashboard -> next action"
   });
 
   const next = await screen.findByRole("button", { name: "Следующая карточка" });
-  fireEvent.click(next); // top_category
-  fireEvent.click(next); // activity_streak
-  fireEvent.click(next); // behavior_reveal
-  fireEvent.click(next); // achievement_spotlight (last slide)
+  fireEvent.click(next); // behavior
+  fireEvent.click(next); // explorer_of_the_year
+  fireEvent.click(next); // always_informed (last slide)
   fireEvent.click(next); // past the last slide -> dashboard
 
   const nextActionLink = await screen.findByRole("link", { name: "Перейти" });
-  expect(nextActionLink).toHaveAttribute("href", "/search?category=electronics");
+  expect(nextActionLink).toHaveAttribute("href", "https://www.avito.ru/rossiya/elektronika");
   expect(
     screen.getByText("Продолжите изучать электронику — с сентября вы возвращались к ней чаще всего."),
   ).toBeInTheDocument();

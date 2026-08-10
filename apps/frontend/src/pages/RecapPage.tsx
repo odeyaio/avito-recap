@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { useGetRecap } from "../api/generated/client";
-import type { StoryCard } from "../api/generated/model";
+import { buildStorySlides } from "../features/story-player/buildStorySlides";
 import { RecapDashboard } from "../ui/organisms/RecapDashboard";
 import { ScreenLayout } from "../ui/templates/ScreenLayout";
 import { StoryPlayerLayout } from "../ui/templates/StoryPlayerLayout";
@@ -32,15 +32,7 @@ export function RecapPage() {
     );
   }
 
-  const { story } = response.data;
-  const introCard: StoryCard = {
-    id: "intro",
-    kind: "intro",
-    title: story.headline,
-    text: story.summary,
-    shareable: true,
-  };
-  const slides = [introCard, ...story.cards];
+  const slides = buildStorySlides(response.data);
 
   return (
     <StoryPlayerLayout

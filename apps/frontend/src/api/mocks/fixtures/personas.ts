@@ -2,10 +2,12 @@ import type { ProfileSummary, Recap } from "../../generated/model";
 
 /**
  * Hand-written (not orval-generated) fixtures used by the mock MSW worker in
- * development and by tests. Each persona is tuned to plausibly satisfy a
+ * development and by tests, so the UI has real variety to render against
+ * without a live backend. Each persona is tuned to plausibly satisfy a
  * distinct rule from catalog/behaviors.yaml and a distinct set of
- * catalog/achievements.yaml codes, so the story/achievement UI has real
- * variety to render against before the backend is available.
+ * catalog/achievements.yaml codes. `story.cards` mirrors the real backend
+ * shape: one `kind: "achievement"` card per unlocked achievement, `id`
+ * matching the achievement's `code` (see apps/backend mapper.go).
  */
 export interface Persona {
   profile: ProfileSummary;
@@ -161,33 +163,19 @@ const explorer: Persona = {
         "Вы посмотрели 132 объявления в 9 категориях и почти не связывались с продавцами — этот год был про изучение, а не про сделки.",
       cards: [
         {
-          id: "card-top-category",
-          kind: "top_category",
-          title: "Электроника — ваша главная тема",
-          text: "320 действий и 9 активных месяцев подряд в этой категории.",
-          metricCodes: ["interests.top_categories"],
+          id: "explorer_of_the_year",
+          kind: "achievement",
+          title: "Исследователь года",
+          text: "Вы посмотрели множество разных объявлений",
+          metricCodes: ["activity.unique_listings_viewed"],
           shareable: true,
         },
         {
-          id: "card-activity-streak",
-          kind: "activity_streak",
-          title: "18 дней подряд",
-          text: "Ваша самая длинная серия активности за год — почти три недели без перерыва.",
-          metricCodes: ["activity.longest_active_streak_days"],
-          shareable: true,
-        },
-        {
-          id: "card-behavior-reveal",
-          kind: "behavior_reveal",
-          title: "Исследователь",
-          text: "Много уникальных просмотров и категорий, мало контактов.",
-          shareable: false,
-        },
-        {
-          id: "card-achievements",
-          kind: "achievement_spotlight",
-          title: "2 ачивки открыты",
-          text: "«Исследователь года» и «Всегда в курсе».",
+          id: "always_informed",
+          kind: "achievement",
+          title: "Всегда в курсе",
+          text: "Вы регулярно открывали объявления из уведомлений",
+          metricCodes: ["features.notification_opens"],
           shareable: true,
         },
       ],
@@ -196,7 +184,7 @@ const explorer: Persona = {
       code: "open_frequent_interest_feed",
       title: "Посмотреть предложения по частым интересам",
       text: "Продолжите изучать электронику — с сентября вы возвращались к ней чаще всего.",
-      href: "/search?category=electronics",
+      href: "https://www.avito.ru/rossiya/elektronika",
       target: { type: "search", categoryCode: "electronics" },
     },
     shareCard: {
@@ -336,33 +324,27 @@ const determinedBuyer: Persona = {
         "68% ваших действий — в мебели. Вы возвращались к избранным объявлениям и уверенно доводили дело до сделки.",
       cards: [
         {
-          id: "card-top-category",
-          kind: "top_category",
-          title: "Мебель — 68% всех действий",
-          text: "Ни одна другая категория не была вам так интересна.",
-          metricCodes: ["interests.top_categories"],
+          id: "know_exactly_what_i_want",
+          kind: "achievement",
+          title: "Точно знаю, чего хочу",
+          text: "Вы проводили большую часть времени в одной категории",
+          metricCodes: ["interests.top_category_share"],
           shareable: true,
         },
         {
-          id: "card-favorites",
-          kind: "activity_streak",
-          title: "34 объявления в избранном",
-          text: "Вы собрали внушительную коллекцию вариантов на выбор.",
+          id: "collection_of_the_year",
+          kind: "achievement",
+          title: "Коллекция года",
+          text: "Вы собрали большую коллекцию объявлений в избранном",
           metricCodes: ["intent.favorites_added"],
           shareable: true,
         },
         {
-          id: "card-behavior-reveal",
-          kind: "behavior_reveal",
-          title: "Целеустремлённый покупатель",
-          text: "Узкий интерес, повторные просмотры, избранное и контакты.",
-          shareable: false,
-        },
-        {
-          id: "card-achievements",
-          kind: "achievement_spotlight",
-          title: "3 ачивки открыты",
-          text: "«Точно знаю, чего хочу», «Коллекция года», «С доставкой удобнее».",
+          id: "delivery_is_easier",
+          kind: "achievement",
+          title: "С доставкой удобнее",
+          text: "Вы выбирали доставку для значительной части сделок",
+          metricCodes: ["marketplace.delivery_share"],
           shareable: true,
         },
       ],
@@ -371,7 +353,7 @@ const determinedBuyer: Persona = {
       code: "return_to_current_options",
       title: "Вернуться к актуальным вариантам",
       text: "В избранном ещё есть подходящая мебель — часть объявлений всё ещё активна.",
-      href: "/favorites?category=furniture",
+      href: "https://www.avito.ru/favorites",
       target: { type: "favorites", categoryCode: "furniture" },
     },
     shareCard: {
@@ -527,33 +509,35 @@ const effectiveSeller: Persona = {
         "6 из 9 объявлений закрылись продажей, а средняя оценка 4.8 — этот год вы провели по обе стороны сделки.",
       cards: [
         {
-          id: "card-top-category",
-          kind: "top_category",
-          title: "Инструменты — ваша сильная сторона",
-          text: "410 действий и 10 активных месяцев в этой категории.",
-          metricCodes: ["interests.top_categories"],
+          id: "successful_seller",
+          kind: "achievement",
+          title: "Успешный продавец",
+          text: "Вы успешно завершили несколько продаж",
+          metricCodes: ["marketplace.sales"],
           shareable: true,
         },
         {
-          id: "card-sales",
-          kind: "activity_streak",
-          title: "6 продаж, 63 обращения",
-          text: "Ваши объявления привлекали внимание и доводили дело до сделки.",
-          metricCodes: ["marketplace.sales", "marketplace.listingContacts"],
+          id: "both_sides_of_deal",
+          kind: "achievement",
+          title: "Две стороны сделки",
+          text: "Вы побывали и покупателем, и продавцом",
+          metricCodes: ["marketplace.purchases", "marketplace.sales"],
           shareable: true,
         },
         {
-          id: "card-behavior-reveal",
-          kind: "behavior_reveal",
-          title: "Эффективный продавец",
-          text: "Высокая доля объявлений завершается продажей.",
-          shareable: false,
+          id: "five_stars",
+          kind: "achievement",
+          title: "Пять звёзд",
+          text: "Вы получили несколько оценок в пять звёзд",
+          metricCodes: ["community.five_star_ratings"],
+          shareable: true,
         },
         {
-          id: "card-achievements",
-          kind: "achievement_spotlight",
-          title: "4 ачивки открыты",
-          text: "«Успешный продавец», «Две стороны сделки», «Пять звёзд», «Надёжный продавец».",
+          id: "reliable_seller",
+          kind: "achievement",
+          title: "Надёжный продавец",
+          text: "Вы успешно продавали и получали положительные оценки",
+          metricCodes: ["marketplace.sales", "community.average_rating"],
           shareable: true,
         },
       ],
@@ -562,7 +546,7 @@ const effectiveSeller: Persona = {
       code: "open_seller_statistics",
       title: "Посмотреть статистику и продать ещё",
       text: "У вас отличная конверсия в продажу — самое время выставить новый лот.",
-      href: "/seller/statistics",
+      href: "https://www.avito.ru/profile/statistics",
       target: { type: "seller_statistics" },
     },
     shareCard: {

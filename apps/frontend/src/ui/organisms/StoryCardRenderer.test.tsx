@@ -27,6 +27,17 @@ test("renders a known kind", () => {
   expect(screen.getByText("Текст карточки")).toBeInTheDocument();
 });
 
+test("renders the real achievement kind the backend actually sends", () => {
+  const [achievement] = recap.achievements;
+  const card = recap.story.cards.find((item) => item.id === achievement.code)!;
+
+  render(<StoryCardRenderer card={card} recap={recap} />);
+
+  expect(
+    screen.getByRole("heading", { name: achievement.name }),
+  ).toBeInTheDocument();
+});
+
 test("falls back without crashing for an unrecognized kind", () => {
   render(
     <StoryCardRenderer

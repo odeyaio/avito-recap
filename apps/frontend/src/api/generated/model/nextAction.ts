@@ -13,7 +13,7 @@ export interface NextAction {
   title: string;
   /** Персональная формулировка, созданная ИИ для готового действия */
   text: string;
-  /** Внутренняя ссылка или deep link, сформированный сервисом */
+  /** Публичная HTTPS-ссылка на соответствующий раздел Avito */
   href: string;
   target: ActionTarget;
 }

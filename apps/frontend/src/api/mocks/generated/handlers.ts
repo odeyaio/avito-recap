@@ -33,10 +33,6 @@ export interface ProfileListResponse {
 }
 
 export interface GenerateRecapRequest {
-  /**
-   * @minimum 2020
-   * @maximum 2100
-   */
   year: number;
   locale?: string;
 }
@@ -205,7 +201,7 @@ export interface NextAction {
   title: string;
   /** Персональная формулировка, созданная ИИ для готового действия */
   text: string;
-  /** Внутренняя ссылка или deep link, сформированный сервисом */
+  /** Публичная HTTPS-ссылка на соответствующий раздел Avito */
   href: string;
   target: ActionTarget;
 }
@@ -724,7 +720,7 @@ export const getGenerateRecapResponseMock = (
     code: faker.string.alpha({ length: { min: 10, max: 20 } }),
     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
     text: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    href: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    href: faker.internet.url(),
     target: {
       type: faker.string.alpha({ length: { min: 10, max: 20 } }),
       id: faker.helpers.arrayElement([
@@ -950,7 +946,7 @@ export const getGetRecapResponseMock = (
     code: faker.string.alpha({ length: { min: 10, max: 20 } }),
     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
     text: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    href: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    href: faker.internet.url(),
     target: {
       type: faker.string.alpha({ length: { min: 10, max: 20 } }),
       id: faker.helpers.arrayElement([

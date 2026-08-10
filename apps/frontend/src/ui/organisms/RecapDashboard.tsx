@@ -18,6 +18,11 @@ export interface RecapDashboardProps {
 
 export function RecapDashboard({ recap, onReplay }: RecapDashboardProps) {
   const [selected, setSelected] = useState<Achievement | null>(null);
+  // Achievement-kind cards are already shown as badges above; only show a
+  // separate "story cards" grid for whatever else is in the sequence.
+  const nonAchievementCards = recap.story.cards.filter(
+    (card) => card.kind !== "achievement",
+  );
 
   return (
     <Stack spacing={3} sx={{ width: "100%" }}>
@@ -45,22 +50,24 @@ export function RecapDashboard({ recap, onReplay }: RecapDashboardProps) {
         </Stack>
       ) : null}
 
-      <Stack spacing={1}>
-        <Typography variant="h6" component="h2">
-          Карточки года
-        </Typography>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: 2,
-          }}
-        >
-          {recap.story.cards.map((card) => (
-            <RecapSummaryCard key={card.id} card={card} />
-          ))}
-        </Box>
-      </Stack>
+      {nonAchievementCards.length > 0 ? (
+        <Stack spacing={1}>
+          <Typography variant="h6" component="h2">
+            Карточки года
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+              gap: 2,
+            }}
+          >
+            {nonAchievementCards.map((card) => (
+              <RecapSummaryCard key={card.id} card={card} />
+            ))}
+          </Box>
+        </Stack>
+      ) : null}
 
       <NextActionCta nextAction={recap.nextAction} />
 

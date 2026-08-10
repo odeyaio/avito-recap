@@ -1,5 +1,6 @@
 .DS_Store
 .env
+compose.override.yaml
 .idea/
 .vscode/
 *.log
