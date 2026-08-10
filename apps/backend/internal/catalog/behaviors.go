@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"strings"
 
@@ -26,9 +27,10 @@ type BehaviorDefinition struct {
 }
 
 type DefaultAction struct {
-	Code     string `json:"code" yaml:"code"`
-	Title    string `json:"title" yaml:"title"`
-	Resolver string `json:"resolver" yaml:"resolver"`
+	Code       string `json:"code" yaml:"code"`
+	Title      string `json:"title" yaml:"title"`
+	TargetType string `json:"targetType" yaml:"targetType"`
+	Href       string `json:"href" yaml:"href"`
 }
 
 func LoadBehaviors(path string) (BehaviorCatalog, error) {
@@ -117,8 +119,12 @@ func validateDefaultAction(action DefaultAction, path string) error {
 	if strings.TrimSpace(action.Title) == "" {
 		return fmt.Errorf("%s.title is required", path)
 	}
-	if !codePattern.MatchString(action.Resolver) {
-		return fmt.Errorf("%s.resolver must match %s", path, codePattern)
+	if !codePattern.MatchString(action.TargetType) {
+		return fmt.Errorf("%s.targetType must match %s", path, codePattern)
+	}
+	href, err := url.ParseRequestURI(action.Href)
+	if err != nil || href.Scheme != "https" || href.Host != "www.avito.ru" || href.User != nil {
+		return fmt.Errorf("%s.href must be an HTTPS URL on www.avito.ru", path)
 	}
 
 	return nil

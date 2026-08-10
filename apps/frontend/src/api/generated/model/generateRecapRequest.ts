@@ -8,10 +8,6 @@
  */
 
 export interface GenerateRecapRequest {
-  /**
-   * @minimum 2020
-   * @maximum 2100
-   */
   year: number;
   locale?: string;
 }

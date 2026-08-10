@@ -248,13 +248,6 @@ func clamp(value, min, max float64) float64 {
 	return value
 }
 
-func randomDateAfter(base time.Time, rnd *rand.Rand, maxDays int) time.Time {
-	if maxDays <= 0 {
-		return base
-	}
-	return base.AddDate(0, 0, rnd.Intn(maxDays)+1)
-}
-
 func SellerCountForListings(listingCount int) int {
 	count := listingCount / 20
 	if count < 5 {

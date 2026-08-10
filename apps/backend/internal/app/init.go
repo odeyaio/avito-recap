@@ -1,12 +1,16 @@
 package app
 
 import (
-	httpadapter "avito-recap/internal/adapter/in/http"
 	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
+
+	httpadapter "avito-recap/internal/adapter/in/http"
+	postgresrepo "avito-recap/internal/adapter/out/repository/postgres"
+	"avito-recap/internal/engine"
+	"avito-recap/internal/service"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
@@ -15,6 +19,11 @@ import (
 
 func New(ctx context.Context, config Config, logger *slog.Logger) (*App, error) {
 	const op = "app.New"
+
+	recapEngine, err := engine.New(config.Engine)
+	if err != nil {
+		return nil, fmt.Errorf("%s: configure engine: %w", op, err)
+	}
 
 	poolConfig, err := pgxpool.ParseConfig(config.DatabaseURL)
 	if err != nil {
@@ -33,10 +42,24 @@ func New(ctx context.Context, config Config, logger *slog.Logger) (*App, error) 
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	profileRepository := postgresrepo.NewProfileRepository(pool)
+	datasetRepository := postgresrepo.NewDatasetRepository(pool)
+	catalogRepository := postgresrepo.NewCatalogRepository(pool)
+	recapRepository := postgresrepo.NewRecapRepository(pool)
+	profileService := service.NewProfileService(profileRepository)
+	recapService := service.NewRecapService(
+		profileRepository,
+		datasetRepository,
+		catalogRepository,
+		recapRepository,
+		recapEngine,
+		service.DefaultActionResolver{},
+	)
+
 	router := echo.New()
 	router.Logger = logger
 	router.Use(middleware.RequestID(), middleware.RequestLogger(), middleware.Recover())
-	httpadapter.RegisterHandlers(router, pool)
+	httpadapter.RegisterHandlers(router, pool, profileService, recapService)
 
 	server := echo.StartConfig{
 		Address:         config.HTTP.Address,
@@ -55,5 +78,12 @@ func New(ctx context.Context, config Config, logger *slog.Logger) (*App, error) 
 		},
 	}
 
-	return &App{server: server, router: router, pool: pool, logger: logger}, nil
+	return &App{
+		server:   server,
+		router:   router,
+		pool:     pool,
+		profiles: profileService,
+		recaps:   recapService,
+		logger:   logger,
+	}, nil
 }

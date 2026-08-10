@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"time"
 
+	"avito-recap/internal/engine"
+
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
@@ -13,6 +15,7 @@ type Config struct {
 	HTTP        HTTPConfig
 	DatabaseURL string     `env:"DATABASE_URL" env-required:"true"`
 	LogLevel    slog.Level `env:"LOG_LEVEL" env-default:"info"`
+	Engine      engine.Config
 }
 
 type HTTPConfig struct {

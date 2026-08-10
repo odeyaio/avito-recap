@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,9 +31,26 @@ const (
 
 const (
 	EventSourceNotification = "notification"
-	EventSourcePush        = "push"
-	EventSourceEmail       = "email"
-	EventSourceDirect      = "direct"
+	EventSourcePush         = "push"
+	EventSourceEmail        = "email"
+	EventSourceDirect       = "direct"
+)
+
+const (
+	EventListingView      EventType = "listing_view"
+	EventSearch           EventType = "search"
+	EventFavoriteAdd      EventType = "favorite_add"
+	EventFavoriteRemove   EventType = "favorite_remove"
+	EventContact          EventType = "contact"
+	EventNotificationOpen EventType = "notification_open"
+	EventPromotionUse     EventType = "promotion_use"
+	EventListingEdit      EventType = "listing_edit"
+	EventDeliveryEnable   EventType = "delivery_enable"
+)
+
+const (
+	DealCompleted DealStatus = "completed"
+	DealCancelled DealStatus = "cancelled"
 )
 
 type User struct {
@@ -99,4 +117,40 @@ type Review struct {
 	RecipientID uuid.UUID
 	Rating      int16
 	CreatedAt   time.Time
+}
+
+type Period struct {
+	Start time.Time
+	End   time.Time
+}
+
+func (p Period) Validate() error {
+	if p.Start.IsZero() || p.End.IsZero() {
+		return errors.New("period boundaries are required")
+	}
+	if !p.End.After(p.Start) {
+		return errors.New("period end must be after start")
+	}
+	return nil
+}
+
+func (p Period) Contains(value time.Time) bool {
+	return !value.Before(p.Start) && value.Before(p.End)
+}
+
+type Dataset struct {
+	User                  User
+	Period                Period
+	DataCutoffAt          time.Time
+	Events                []ActivityEvent
+	Categories            []Category
+	Listings              []Listing
+	Deals                 []Deal
+	Reviews               []Review
+	EngagementPercentiles map[uuid.UUID]float64
+}
+
+type VersionedDataset struct {
+	Value   Dataset
+	Version string
 }

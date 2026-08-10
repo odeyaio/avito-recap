@@ -42,14 +42,14 @@ type Contact struct {
 }
 
 type UserActivity struct {
-	UserEvents []ActivityEvent
-	Searches   []Search
-	Views      []View
-	Favorites  []Favorite
-	Contacts   []Contact
-	Deals      []Deal
-	Reviews    []Review
-	Listings   []Listing
+	UserEvents     []ActivityEvent
+	Searches       []Search
+	Views          []View
+	Favorites      []Favorite
+	Contacts       []Contact
+	Deals          []Deal
+	Reviews        []Review
+	Listings       []Listing
 	ViewedListings []Listing
 }
 
