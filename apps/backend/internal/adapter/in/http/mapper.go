@@ -102,13 +102,13 @@ func recapResponse(recap model.Recap) (generated.Recap, error) {
 	if err != nil {
 		return generated.Recap{}, err
 	}
-	nextAction, err := nextActionResponse(recap.NextAction, recap.Behaviors)
+	nextAction, aiDescription, err := nextActionResponse(recap.NextAction, recap.Behaviors)
 	if err != nil {
 		return generated.Recap{}, err
 	}
 
 	year := recap.Snapshot.PeriodStart.Year()
-	shareCard := shareCardResponse(year, primary, achievements, metrics.Interests)
+	shareCard := shareCardResponse(year, primary, achievements, metrics.Interests, aiDescription)
 
 	return generated.Recap{
 		ID:      recap.Snapshot.ID,
@@ -137,10 +137,15 @@ func shareCardResponse(
 	primary generated.BehaviorMatch,
 	achievements []generated.Achievement,
 	interests generated.InterestMetrics,
+	aiDescription string,
 ) generated.ShareCard {
+	subtitle := shareCardSubtitle(primary, achievements, interests)
+	if aiDescription != "" {
+		subtitle = aiDescription
+	}
 	card := generated.ShareCard{
 		Title:    fmt.Sprintf("Мой %d год на Авито — «%s»", year, primary.Name),
-		Subtitle: shareCardSubtitle(primary, achievements, interests),
+		Subtitle: subtitle,
 	}
 	for _, achievement := range achievements {
 		if !achievement.Shareable {
@@ -321,16 +326,23 @@ func achievementResponse(
 	return values, cards, nil
 }
 
+type aiActionText struct {
+	AI *struct {
+		Description string `json:"description"`
+		ActionText  string `json:"actionText"`
+	} `json:"ai,omitempty"`
+}
+
 func nextActionResponse(
 	action *model.RecapNextAction,
 	behaviors []model.StoredBehavior,
-) (generated.NextAction, error) {
+) (generated.NextAction, string, error) {
 	if action == nil {
-		return generated.NextAction{}, errNextActionMissing
+		return generated.NextAction{}, "", errNextActionMissing
 	}
 	var target generated.ActionTarget
 	if err := json.Unmarshal(action.Target, &target); err != nil {
-		return generated.NextAction{}, err
+		return generated.NextAction{}, "", err
 	}
 
 	var definition catalog.DefaultAction
@@ -339,14 +351,27 @@ func nextActionResponse(
 			continue
 		}
 		if err := json.Unmarshal(behavior.Definition.DefaultAction, &definition); err != nil {
-			return generated.NextAction{}, err
+			return generated.NextAction{}, "", err
 		}
 		break
 	}
+
+	var aiText aiActionText
+	_ = json.Unmarshal(action.Target, &aiText)
+
+	text := definition.Title
+	description := ""
+	if aiText.AI != nil {
+		if aiText.AI.ActionText != "" {
+			text = aiText.AI.ActionText
+		}
+		description = aiText.AI.Description
+	}
+
 	return generated.NextAction{
-		Code: action.Code, Title: definition.Title, Text: definition.Title,
+		Code: action.Code, Title: definition.Title, Text: text,
 		Href: action.Href, Target: target,
-	}, nil
+	}, description, nil
 }
 
 func evidenceResponse(raw json.RawMessage) ([]generated.Evidence, error) {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"avito-recap/internal/engine"
+	"avito-recap/internal/service"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -16,6 +17,10 @@ type Config struct {
 	DatabaseURL string     `env:"DATABASE_URL" env-required:"true"`
 	LogLevel    slog.Level `env:"LOG_LEVEL" env-default:"info"`
 	Engine      engine.Config
+	// LLM configures optional AI-personalized next-action text. Disabled by
+	// default (LLM_NEXT_ACTION_ENABLED=false) — see README "LLM-агент для
+	// next action" section.
+	LLM service.LLMConfig
 }
 
 type HTTPConfig struct {
