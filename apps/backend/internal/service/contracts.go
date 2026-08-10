@@ -41,6 +41,10 @@ type actionResolver interface {
 	Resolve(context.Context, catalog.DefaultAction, model.Dataset, []engine.Evidence) (model.RecapNextAction, error)
 }
 
+type textEnricher interface {
+	Enrich(ctx context.Context, result engine.Result) (description, actionText string, err error)
+}
+
 type clock interface {
 	Now() time.Time
 }

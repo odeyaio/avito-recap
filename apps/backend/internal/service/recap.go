@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"avito-recap/internal/engine"
 	"avito-recap/internal/model"
@@ -20,6 +21,7 @@ type RecapService struct {
 	recaps   recapRepository
 	engine   ruleEngine
 	actions  actionResolver
+	enricher textEnricher
 	clock    clock
 }
 
@@ -30,6 +32,7 @@ func NewRecapService(
 	recaps recapRepository,
 	ruleEngine ruleEngine,
 	actions actionResolver,
+	enricher textEnricher,
 ) *RecapService {
 	return &RecapService{
 		profiles: profiles,
@@ -38,6 +41,7 @@ func NewRecapService(
 		recaps:   recaps,
 		engine:   ruleEngine,
 		actions:  actions,
+		enricher: enricher,
 		clock:    systemClock{},
 	}
 }
@@ -165,6 +169,16 @@ func (s *RecapService) GenerateRecap(ctx context.Context, profileID uuid.UUID, y
 	}
 	action.RecapID = recapID
 	action.ResolvedAt = now
+
+	if s.enricher != nil {
+		description, actionText, enrichErr := s.enricher.Enrich(ctx, result)
+		if enrichErr != nil {
+			slog.Default().Warn("llm next-action enrichment skipped", "error", enrichErr)
+		} else if merged, mergeErr := mergeAIText(action.Target, description, actionText); mergeErr == nil {
+			action.Target = merged
+		}
+	}
+
 	draft.NextAction = &action
 
 	recap, err := s.recaps.SaveRecap(ctx, draft)
@@ -181,4 +195,22 @@ func primaryBehavior(matches []engine.BehaviorMatch) (engine.BehaviorMatch, bool
 		}
 	}
 	return engine.BehaviorMatch{}, false
+}
+
+func mergeAIText(raw json.RawMessage, description, actionText string) (json.RawMessage, error) {
+	target := map[string]any{}
+	if len(raw) > 0 {
+		if err := json.Unmarshal(raw, &target); err != nil {
+			return nil, fmt.Errorf("unmarshal existing action target: %w", err)
+		}
+	}
+	target["ai"] = map[string]string{
+		"description": description,
+		"actionText":  actionText,
+	}
+	merged, err := json.Marshal(target)
+	if err != nil {
+		return nil, fmt.Errorf("marshal merged action target: %w", err)
+	}
+	return merged, nil
 }

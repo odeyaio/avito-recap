@@ -73,6 +73,7 @@ func TestGenerateRecapBuildsAndPersistsDraft(t *testing.T) {
 		repositories,
 		ruleEngine,
 		DefaultActionResolver{},
+		nil,
 	)
 	recapService.clock = fixedClock{value: now}
 

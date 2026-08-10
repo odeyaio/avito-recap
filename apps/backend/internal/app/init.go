@@ -47,6 +47,7 @@ func New(ctx context.Context, config Config, logger *slog.Logger) (*App, error) 
 	catalogRepository := postgresrepo.NewCatalogRepository(pool)
 	recapRepository := postgresrepo.NewRecapRepository(pool)
 	profileService := service.NewProfileService(profileRepository)
+
 	recapService := service.NewRecapService(
 		profileRepository,
 		datasetRepository,
@@ -54,6 +55,7 @@ func New(ctx context.Context, config Config, logger *slog.Logger) (*App, error) 
 		recapRepository,
 		recapEngine,
 		service.DefaultActionResolver{},
+		service.NewLLMTextEnricher(config.LLM),
 	)
 
 	router := echo.New()
