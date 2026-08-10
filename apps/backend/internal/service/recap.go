@@ -197,13 +197,6 @@ func primaryBehavior(matches []engine.BehaviorMatch) (engine.BehaviorMatch, bool
 	return engine.BehaviorMatch{}, false
 }
 
-// mergeAIText folds LLM-generated text into the next action's existing
-// Target JSON (already a free-form object — see DefaultActionResolver.Resolve
-// in action.go, which sets {"type": ..., "categoryCode": ...}). No DB
-// migration: RecapNextAction has no dedicated text column, so this reuses
-// the JSONB column that already exists. mapper.go reads the "ai" key back
-// out; generated.ActionTarget's own decode ignores it (unknown JSON keys are
-// silently dropped by encoding/json).
 func mergeAIText(raw json.RawMessage, description, actionText string) (json.RawMessage, error) {
 	target := map[string]any{}
 	if len(raw) > 0 {

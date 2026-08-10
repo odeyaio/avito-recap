@@ -48,12 +48,6 @@ func New(ctx context.Context, config Config, logger *slog.Logger) (*App, error) 
 	recapRepository := postgresrepo.NewRecapRepository(pool)
 	profileService := service.NewProfileService(profileRepository)
 
-	// Always construct a real enricher, even when LLM.Enabled is false —
-	// LLMTextEnricher.Enrich checks its own config.Enabled and no-ops
-	// immediately in that case. This sidesteps the classic Go footgun of
-	// assigning a typed-nil *LLMTextEnricher to an interface-typed variable
-	// (which would make RecapService's own `enricher != nil` check true even
-	// though the pointer is nil, and then panic on first use).
 	recapService := service.NewRecapService(
 		profileRepository,
 		datasetRepository,
