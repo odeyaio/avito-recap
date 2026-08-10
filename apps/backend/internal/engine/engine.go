@@ -53,28 +53,26 @@ func (e *Engine) Run(
 		return Result{}, fmt.Errorf("validate behavior catalog: %w", err)
 	}
 
-	metrics, err := e.CalculateMetrics(dataset)
+	result, err := e.CalculateMetrics(dataset)
 	if err != nil {
 		return Result{}, err
 	}
-	if actions, ok := intMetric(metrics, "activity.total_actions"); !ok || actions < int64(e.config.MinimumActions) {
+	if actions, ok := intMetric(result.Metrics, "activity.total_actions"); !ok || actions < int64(e.config.MinimumActions) {
 		return Result{}, ErrNoActivity
 	}
 
-	behaviors, err := matchBehaviors(behaviorCatalog.Behaviors, metrics)
+	behaviors, err := matchBehaviors(behaviorCatalog.Behaviors, result.Metrics)
 	if err != nil {
 		return Result{}, err
 	}
-	achievements, err := matchAchievements(achievementCatalog.Achievements, metrics)
+	achievements, err := matchAchievements(achievementCatalog.Achievements, result.Metrics)
 	if err != nil {
 		return Result{}, err
 	}
 
-	return Result{
-		Metrics:      metrics,
-		Behaviors:    behaviors,
-		Achievements: achievements,
-	}, nil
+	result.Behaviors = behaviors
+	result.Achievements = achievements
+	return result, nil
 }
 
 func matchBehaviors(definitions []catalog.BehaviorDefinition, metrics Metrics) ([]BehaviorMatch, error) {

@@ -33,8 +33,7 @@ type GeneratorConfig struct {
 	UserRegistrationYearsAgo             int
 	SellerRegistrationYearsAgo           int
 	SellerSelectionRate                  float64
-	ListingPublishWindowDays             int
-	ListingPublishWindowFallbackDays     int
+	ListingHistoryYears                  int
 	PriceBandLowMax                      float64
 	PriceBandHighMin                     float64
 	ListingDeliveryProbabilityPercent    int
@@ -47,6 +46,9 @@ type GeneratorConfig struct {
 	IntentCountMin                       int
 	IntentCountMax                       int
 	IntentSpreadDays                     int
+	RecentActivityWindowMonths           int
+	RecentActivityBias                   float64
+	SearchCandidatePoolSize              int
 	EventFavoriteOffsetMinutes           int
 	EventContactOffsetMinutes            int
 	EventDealOffsetMinutes               int
@@ -64,11 +66,10 @@ type GeneratorConfig struct {
 
 func DefaultGeneratorConfig() GeneratorConfig {
 	return GeneratorConfig{
-		UserRegistrationYearsAgo:             2,
+		UserRegistrationYearsAgo:             3,
 		SellerRegistrationYearsAgo:           3,
 		SellerSelectionRate:                  0.15,
-		ListingPublishWindowDays:             30,
-		ListingPublishWindowFallbackDays:     7,
+		ListingHistoryYears:                  3,
 		PriceBandLowMax:                      10000,
 		PriceBandHighMin:                     100000,
 		ListingDeliveryProbabilityPercent:    30,
@@ -77,10 +78,13 @@ func DefaultGeneratorConfig() GeneratorConfig {
 		EventDefaultCategory:                 "Электроника",
 		EventBaseTimeOffsetHours:             24,
 		EventSpreadDays:                      3,
-		IntentCountMultiplier:                5.0,
-		IntentCountMin:                       1,
-		IntentCountMax:                       15,
+		IntentCountMultiplier:                12.0,
+		IntentCountMin:                       10,
+		IntentCountMax:                       60,
 		IntentSpreadDays:                     7,
+		RecentActivityWindowMonths:           14,
+		RecentActivityBias:                   0.75,
+		SearchCandidatePoolSize:              15,
 		EventFavoriteOffsetMinutes:           5,
 		EventContactOffsetMinutes:            15,
 		EventDealOffsetMinutes:               30,
@@ -199,7 +203,7 @@ func RandomUserConfig(rnd *rand.Rand, categories []CategoryConfig) UserConfig {
 		Review:                  review,
 		NotificationOpen:        notificationOpen,
 		SellFrequency:           sellFrequency,
-		IntentCount:             0, 
+		IntentCount:             0,
 		PriceSegment:            priceSegment,
 		PreferredCategories:     preferred,
 		UnlikelyCategories:      unlikely,

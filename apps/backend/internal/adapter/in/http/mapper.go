@@ -19,17 +19,32 @@ var (
 	errNextActionMissing      = errors.New("next action is missing")
 )
 
+type categoryMetric struct {
+	Code         string  `json:"code"`
+	Name         string  `json:"name"`
+	Actions      int64   `json:"actions"`
+	ActiveMonths int64   `json:"active_months"`
+	Share        float64 `json:"share"`
+}
+
 type snapshotMetrics struct {
 	Activity struct {
-		Views                   int64  `json:"views"`
-		UniqueListingsViewed    int64  `json:"unique_listings_viewed"`
-		Searches                int64  `json:"searches"`
-		ActiveDays              int32  `json:"active_days"`
-		ActiveMonths            int32  `json:"active_months"`
-		LongestActiveStreakDays int32  `json:"longest_active_streak_days"`
-		MostActiveMonth         string `json:"most_active_month"`
-		FavoriteHour            int32  `json:"favorite_hour"`
+		Views                   int64     `json:"views"`
+		UniqueListingsViewed    int64     `json:"unique_listings_viewed"`
+		Searches                int64     `json:"searches"`
+		ActiveDays              int32     `json:"active_days"`
+		ActiveMonths            int32     `json:"active_months"`
+		LongestActiveStreakDays int32     `json:"longest_active_streak_days"`
+		MostActiveMonth         string    `json:"most_active_month"`
+		FavoriteHour            int32     `json:"favorite_hour"`
+		MonthlyActions          [12]int64 `json:"monthly_actions"`
 	} `json:"activity"`
+	Interests struct {
+		TopCategories          []categoryMetric `json:"top_categories"`
+		NewCategories          []categoryMetric `json:"new_categories"`
+		MostConsistentCategory *categoryMetric  `json:"most_consistent_category"`
+		PreferredPriceBand     string           `json:"preferred_price_band"`
+	} `json:"interests"`
 	Intent struct {
 		RepeatViews             int64   `json:"repeat_viewed_listings"`
 		FavoritesAdded          int64   `json:"favorites_added"`
@@ -37,6 +52,7 @@ type snapshotMetrics struct {
 		Contacts                int64   `json:"contacts"`
 		CompletedDeals          int64   `json:"completed_deals"`
 		ContactToDealConversion float64 `json:"contact_to_deal_conversion"`
+		CancelledAfterContact   int64   `json:"cancelled_after_contact"`
 	} `json:"intent"`
 	Marketplace struct {
 		Purchases         int64 `json:"purchases"`
@@ -46,6 +62,7 @@ type snapshotMetrics struct {
 		ClosedListings    int64 `json:"closed_listings"`
 		ListingViews      int64 `json:"listing_views"`
 		ListingContacts   int64 `json:"listing_contacts"`
+		ListingEdits      int64 `json:"listing_edits"`
 	} `json:"marketplace"`
 	Community struct {
 		ReviewsLeft     int64   `json:"reviews_left"`
@@ -56,6 +73,7 @@ type snapshotMetrics struct {
 	Features struct {
 		NotificationOpens int64 `json:"notification_opens"`
 		PromotionUses     int64 `json:"promotion_uses"`
+		ListingsShared    int64 `json:"listings_shared"`
 	} `json:"features"`
 }
 
@@ -90,6 +108,8 @@ func recapResponse(recap model.Recap) (generated.Recap, error) {
 	}
 
 	year := recap.Snapshot.PeriodStart.Year()
+	shareCard := shareCardResponse(year, primary, achievements, metrics.Interests)
+
 	return generated.Recap{
 		ID:      recap.Snapshot.ID,
 		Profile: profileResponse(recap.Profile),
@@ -107,8 +127,53 @@ func recapResponse(recap model.Recap) (generated.Recap, error) {
 			Cards:    cards,
 		},
 		NextAction:  nextAction,
+		ShareCard:   &shareCard,
 		GeneratedAt: recap.Snapshot.GeneratedAt,
 	}, nil
+}
+
+func shareCardResponse(
+	year int,
+	primary generated.BehaviorMatch,
+	achievements []generated.Achievement,
+	interests generated.InterestMetrics,
+) generated.ShareCard {
+	card := generated.ShareCard{
+		Title:    fmt.Sprintf("Мой %d год на Авито — «%s»", year, primary.Name),
+		Subtitle: shareCardSubtitle(primary, achievements, interests),
+	}
+	for _, achievement := range achievements {
+		if !achievement.Shareable {
+			continue
+		}
+		imageURL := achievement.Image.URL
+		card.ImageURL = &imageURL
+		break
+	}
+	return card
+}
+
+func shareCardSubtitle(
+	primary generated.BehaviorMatch,
+	achievements []generated.Achievement,
+	interests generated.InterestMetrics,
+) string {
+	parts := []string{primary.Description}
+
+	if len(interests.TopCategories) > 0 {
+		top := interests.TopCategories[0]
+		if top.Share != nil && *top.Share > 0 {
+			parts = append(parts, fmt.Sprintf("Больше всего внимания — категории «%s» (%.0f%% активности)", top.Name, *top.Share*100))
+		} else {
+			parts = append(parts, fmt.Sprintf("Больше всего внимания — категории «%s»", top.Name))
+		}
+	}
+
+	if len(achievements) > 0 {
+		parts = append(parts, fmt.Sprintf("Достижений за год: %d", len(achievements)))
+	}
+
+	return strings.Join(parts, ". ")
 }
 
 func metricsResponse(raw json.RawMessage) (generated.RecapMetrics, error) {
@@ -148,13 +213,19 @@ func metricsResponse(raw json.RawMessage) (generated.RecapMetrics, error) {
 		community.AverageRating = &value.Community.AverageRating
 	}
 
+	interests := generated.InterestMetrics{
+		TopCategories: categoryMetricsResponse(value.Interests.TopCategories),
+		NewCategories: categoryMetricsResponse(value.Interests.NewCategories),
+	}
+	if value.Interests.MostConsistentCategory != nil {
+		consistent := categoryMetricResponse(*value.Interests.MostConsistentCategory)
+		interests.MostConsistentCategory = &consistent
+	}
+
 	return generated.RecapMetrics{
-		Activity: activity,
-		Interests: generated.InterestMetrics{
-			TopCategories: []generated.CategoryMetric{},
-			NewCategories: []generated.CategoryMetric{},
-		},
-		Intent: intent,
+		Activity:  activity,
+		Interests: interests,
+		Intent:    intent,
 		Marketplace: generated.MarketplaceMetrics{
 			Purchases: value.Marketplace.Purchases, Sales: value.Marketplace.Sales,
 			DeliveryDeals: value.Marketplace.DeliveryDeals, PublishedListings: value.Marketplace.PublishedListings,
@@ -167,6 +238,25 @@ func metricsResponse(raw json.RawMessage) (generated.RecapMetrics, error) {
 			PromotionUses:     value.Features.PromotionUses,
 		},
 	}, nil
+}
+
+func categoryMetricsResponse(items []categoryMetric) []generated.CategoryMetric {
+	result := make([]generated.CategoryMetric, 0, len(items))
+	for _, item := range items {
+		result = append(result, categoryMetricResponse(item))
+	}
+	return result
+}
+
+func categoryMetricResponse(item categoryMetric) generated.CategoryMetric {
+	share := item.Share
+	return generated.CategoryMetric{
+		Code:         item.Code,
+		Name:         item.Name,
+		Actions:      item.Actions,
+		ActiveMonths: int32(item.ActiveMonths),
+		Share:        &share,
+	}
 }
 
 func behaviorResponse(
